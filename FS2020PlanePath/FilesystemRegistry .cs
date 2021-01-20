@@ -21,17 +21,19 @@ namespace FS2020PlanePath
 
         public bool TryGetById(string id, out T value)
         {
+            string fileName = FilenameForId(id);
             try
             {
-                using (StreamReader file = File.OpenText(FilenameForId(id)))
+                using (StreamReader file = File.OpenText(fileName))
                 {
                     JsonSerializer serializer = new JsonSerializer();
                     value = (T) serializer.Deserialize(file, typeof(T));
                 }
                 return true;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
+                Console.WriteLine($"Can't load({fileName}); {ex.Message}");
                 value = default(T);
                 return false;
             }
@@ -39,17 +41,19 @@ namespace FS2020PlanePath
 
         public bool Save(string id, T value)
         {
+            string fileName = FilenameForId(id);
             try
             {
-                using (StreamWriter file = File.CreateText(FilenameForId(id)))
+                using (StreamWriter file = File.CreateText(fileName))
                 {
                     JsonSerializer serializer = new JsonSerializer();
                     serializer.Formatting = Formatting.Indented;
                     serializer.Serialize(file, value);
                 }
                 return true;
-            } catch(Exception e)
+            } catch(Exception ex)
             {
+                Console.WriteLine($"Can't save({fileName}); {ex.Message}");
                 return false;
             }
         }
@@ -61,26 +65,33 @@ namespace FS2020PlanePath
             {
                 File.Delete(fileName);
                 return true;
-            } catch(Exception e)
+            } catch(Exception ex)
             {
-                Console.WriteLine($"Error deleting({fileName}); exceptionMessage({e.Message})");
+                Console.WriteLine($"Can't delete({fileName}); {ex.Message}");
                 return false;
             }
         }
 
-        public List<string> GetAliases()
+        public List<string> GetIds(int maxCount)
         {
+            // TODO use "EnumerateFiles" to limit based upon 'maxCount'
             FileInfo[] foundFiles = new DirectoryInfo(".").GetFiles(FilenameForId("*"));
             Array.Sort(foundFiles, (f1, f2) => f2.LastAccessTimeUtc.CompareTo(f1.LastAccessTimeUtc));
-            List<string> aliases = new List<string>();
+            List<string> ids = new List<string>();
+            int fileCount = 0;
             foreach (FileInfo foundFile in foundFiles)
             {
                 string foundFileName = foundFile.Name;
-                string aliasLeft = foundFileName.Substring(fileNamePrefix.Length);
-                aliases.Add(aliasLeft.Remove(aliasLeft.Length - fileNameSuffix.Length));
+                string idsLeft = foundFileName.Substring(fileNamePrefix.Length);
+                ids.Add(idsLeft.Remove(idsLeft.Length - fileNameSuffix.Length));
+                if (maxCount >= 0 && fileCount >= maxCount)
+                {
+                    break;
+                }
+                fileCount++;
             }
-            // list of liveCam files, most recently accessed first
-            return aliases;
+            // list of ids, most recently accessed first
+            return ids;
         }
 
         private string FilenameForId(string cleanId)

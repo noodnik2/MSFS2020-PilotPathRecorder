@@ -14,8 +14,9 @@ namespace FS2020PlanePath
         /// <returns>true iff the item was removed</returns>
         bool Delete(string id);
 
-        /// <returns>list of known aliases, most recently accessed first</returns>
-        List<string> GetAliases();
+        /// <param name="maxCount">maximum size of list to return (negative means 'unlimited')</param>
+        /// <returns>list of known ids, most recently accessed first</returns>
+        List<string> GetIds(int maxCount = -1);
     }
 
 }

@@ -16,19 +16,15 @@ namespace FS2020PlanePath
             this.persistentRegistry = persistentRegistry; ;
         }
 
-        public KmlLiveCam LoadByUrl(string url)
+        public KmlLiveCam LoadByAlias(string alias)
         {
-            string alias = GetAlias(url);
             KmlLiveCam kmlLiveCam;
 
             // if we've already got it, 
             if (TryGetById(alias, out kmlLiveCam))
             {
-                // and its URL hasn't changed, 
-                if (url == kmlLiveCam.Link.Values.url) {
-                    // then return it
-                    return kmlLiveCam;
-                }
+                // then return it
+                return kmlLiveCam;
             }
 
             // load it from the persistence provider
@@ -38,8 +34,7 @@ namespace FS2020PlanePath
                 // load that into a liveCam using the current URL
                 kmlLiveCam = new KmlLiveCam(
                     liveCamEntity.CameraTemplate,
-                    liveCamEntity.LinkTemplate,
-                    new KmlNetworkLinkValues(alias, url)
+                    liveCamEntity.LinkTemplate
                 );
                 // save it (back) to the cache
                 cacheRegistry.Save(alias, kmlLiveCam);
@@ -47,7 +42,7 @@ namespace FS2020PlanePath
             }
 
             // if not found in the persistence provider, use a default one
-            kmlLiveCam = DefaultLiveCam(alias, url);
+            kmlLiveCam = DefaultLiveCam(alias);
             // and persist that for the alias
             Save(alias, kmlLiveCam);
             return kmlLiveCam;
@@ -62,7 +57,6 @@ namespace FS2020PlanePath
         {
             LiveCamEntity liveCamEntity = new LiveCamEntity
             {
-                Url = kmlLiveCam.Link.Values.url,
                 CameraTemplate = kmlLiveCam.Camera.Template,
                 LinkTemplate = kmlLiveCam.Link.Template
             };
@@ -75,9 +69,9 @@ namespace FS2020PlanePath
             return cacheRegistry.Delete(alias) && persistentRegistry.Delete(alias);
         }
 
-        public List<string> GetAliases()
+        public List<string> GetIds(int maxCount = -1)
         {
-            return persistentRegistry.GetAliases();
+            return persistentRegistry.GetIds(maxCount);
         }
 
         /// <exception cref="UriFormatException">malformed url</exception>
@@ -100,13 +94,12 @@ namespace FS2020PlanePath
             );
         }
 
-        public static KmlLiveCam DefaultLiveCam(string alias, string url)
+        public static KmlLiveCam DefaultLiveCam(string alias)
         {
             return(
                 new KmlLiveCam(
                     LiveCamConstants.DefaultCameraKmlTemplate,
-                    LiveCamConstants.DefaultNetworkLinkKmlTemplate,
-                    new KmlNetworkLinkValues(alias, url)
+                    LiveCamConstants.DefaultNetworkLinkKmlTemplate
                 )
             );
         }
@@ -155,8 +148,6 @@ namespace FS2020PlanePath
 
     public class LiveCamEntity
     {
-        public int Id { get; set; }
-        public string Url { get; set; }
         public string CameraTemplate { get; set; }
         public string LinkTemplate { get; set; }
     }

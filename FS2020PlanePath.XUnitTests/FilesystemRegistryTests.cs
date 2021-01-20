@@ -1,5 +1,4 @@
 ﻿using Xunit;
-using FS2020PlanePath;
 
 namespace FS2020PlanePath.XUnitTests
 {
