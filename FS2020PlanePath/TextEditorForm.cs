@@ -165,11 +165,11 @@ namespace FS2020PlanePath
 
 Camera Template:
 
-{"\t" + string.Join("\n\t", TemplateRenderer.Placeholders(typeof(KmlCameraParameterValues)))}
+{"\t" + string.Join("\n\t", TextRenderer.Placeholders(typeof(KmlCameraParameterValues)))}
 
 Link Template:
 
-{"\t" + string.Join("\n\t", TemplateRenderer.Placeholders(typeof(KmlNetworkLinkValues)))}
+{"\t" + string.Join("\n\t", TextRenderer.Placeholders(typeof(KmlNetworkLinkValues)))}
 
 See: https://developers.google.com/kml/documentation/kmlreference",
                 this.Location

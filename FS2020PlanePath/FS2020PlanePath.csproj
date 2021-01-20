@@ -193,6 +193,7 @@
     <Compile Include="KmlLiveCamEditorForm.Designer.cs">
       <DependentUpon>KmlLiveCamEditorForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="TemplateRenderers.cs" />
     <Compile Include="TextEditorForm.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -8,8 +8,6 @@ namespace FS2020PlanePath.XUnitTests
         private const string Alias1 = "path1";
         private const string Alias2 = "path2";
         private const string BaseUrl = "http://localhost:8765/";
-        private const string Url1 = BaseUrl + Alias1;
-        private const string Url2 = BaseUrl + Alias2;
         IRegistry<LiveCamEntity> persistenceRegistry;
         LiveCamRegistry liveCamRegistry;
 
@@ -69,17 +67,23 @@ namespace FS2020PlanePath.XUnitTests
         [Fact]
         public void TestPersistenceUpdate()
         {
-            KmlLiveCam kmlLiveCam = liveCamRegistry.LoadByAlias(Alias1);
+            // load default live cam for "Alias1" into "kmlLiveCam1"
+            KmlLiveCam kmlLiveCam1 = liveCamRegistry.LoadByAlias(Alias1);
             LiveCamEntity liveCamEntity;
+            // ensure can load it from persistence registry
             Assert.True(persistenceRegistry.TryGetById(Alias1, out liveCamEntity));
-            Assert.Equal(kmlLiveCam.Camera.Template, liveCamEntity.CameraTemplate);
-            Assert.Equal(kmlLiveCam.Link.Template, liveCamEntity.LinkTemplate);
-            kmlLiveCam.Camera.Template = "updated Camera Template";
-            kmlLiveCam.Link.Template = "updated Link Template";
-            liveCamRegistry.Save(Alias1, kmlLiveCam);
+            // and verify it has the correct templates
+            Assert.Equal(kmlLiveCam1.Camera.Template, liveCamEntity.CameraTemplate);
+            Assert.Equal(kmlLiveCam1.Link.Template, liveCamEntity.LinkTemplate);
+            // create "kmlLiveCam2" with different values
+            KmlLiveCam kmlLiveCam2 = new KmlLiveCam("updated Camera Template", "updated Link Template");
+            // and save that into the registry, replacing as "Alias1"
+            liveCamRegistry.Save(Alias1, kmlLiveCam2);
+            // ensure can load it from the persistence registry
             Assert.True(persistenceRegistry.TryGetById(Alias1, out liveCamEntity));
-            Assert.Equal(kmlLiveCam.Camera.Template, liveCamEntity.CameraTemplate);
-            Assert.Equal(kmlLiveCam.Link.Template, liveCamEntity.LinkTemplate);
+            // and that it has the new, updated values
+            Assert.Equal(kmlLiveCam2.Camera.Template, liveCamEntity.CameraTemplate);
+            Assert.Equal(kmlLiveCam2.Link.Template, liveCamEntity.LinkTemplate);
         }
 
         [Fact]
