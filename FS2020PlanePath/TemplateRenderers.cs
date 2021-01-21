@@ -60,6 +60,10 @@ namespace FS2020PlanePath
             _script = CSharpScript.Create<string>(
                 code: scriptTemplate,
                 globalsType: typeof(V)
+            ).WithOptions(
+                ScriptOptions
+                .Default
+                .WithReferences(Assembly.GetExecutingAssembly())
             );
         }
 

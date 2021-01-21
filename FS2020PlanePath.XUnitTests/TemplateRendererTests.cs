@@ -1,4 +1,5 @@
 ﻿using Xunit;
+using System;
 using Xunit.Abstractions;
 
 namespace FS2020PlanePath.XUnitTests
@@ -15,10 +16,20 @@ namespace FS2020PlanePath.XUnitTests
     {
 
         private readonly ITestOutputHelper logger;
+        private KmlCameraParameterValues[] sequence = new KmlCameraParameterValues[100];
+        private int sequence_position = 0;
 
         public TemplateRendererTests(ITestOutputHelper logger)
         {
             this.logger = logger;
+
+            for (int i = 0; i < sequence.Length; i++)
+            {
+                KmlCameraParameterValues kmlCameraParameterValues = new KmlCameraParameterValues();
+                kmlCameraParameterValues.seq = i;
+                sequence[i] = kmlCameraParameterValues;
+            }
+
         }
 
         /// <summary>
@@ -38,6 +49,50 @@ namespace FS2020PlanePath.XUnitTests
                 IStringTemplateRenderer<RenderValues> testRenderer = new GenericTemplateRenderer<RenderValues>(templateVersion);
                 Assert.Equal("<kml iv1='9965' sv1='' />", testRenderer.Render(new RenderValues { iv1 = 9965 }));
             }
+        }
+
+        [Fact]
+        public void TestScriptContextWithFunctions()
+        {
+            GenericTemplateRenderer<ScriptContext> renderer = new GenericTemplateRenderer<ScriptContext>(
+                "GetFlights(seq).Length.ToString()"
+            );
+
+            string[] results = { Invoke(renderer, 3), Invoke(renderer, 7), Invoke(renderer, 12) };
+            Assert.Equal(new string[] { "3", "4", "5" }, results);
+        }
+
+        /// <summary>
+        /// Script context that includes helper functions and execution instance values
+        /// </summary>
+        public class ScriptContext
+        {
+            public Func<int, KmlCameraParameterValues[]> GetFlights { get; set; }
+            public int seq { get; set; }
+        }
+
+        private string Invoke(IStringTemplateRenderer<ScriptContext> renderer, int seq)
+        {
+            return renderer.Render(
+                new ScriptContext
+                {
+                    GetFlights = s => NextKmlCameraParameterValues(s),
+                    seq = seq
+                }
+            );
+        }
+
+
+        private KmlCameraParameterValues[] NextKmlCameraParameterValues(int seq)
+        {
+            int size = Math.Max(Math.Min(seq, sequence.Length) - sequence_position, 0);
+            KmlCameraParameterValues[] kmlCameraParameterValues = new KmlCameraParameterValues[size];
+            for (int i = 0; i < size; i++)
+            {
+                kmlCameraParameterValues[i] = sequence[sequence_position + i];
+            }
+            sequence_position += size;
+            return kmlCameraParameterValues;
         }
 
     }
