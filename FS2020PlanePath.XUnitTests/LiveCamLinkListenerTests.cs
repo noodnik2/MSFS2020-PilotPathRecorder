@@ -4,16 +4,17 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Collections.Generic;
 
 namespace FS2020PlanePath.XUnitTests
 {
 
-    public class InternalWebServerTests
+    public class LiveCamLinkListenerTests
     {
 
         private readonly ITestOutputHelper logger;
 
-        public InternalWebServerTests(ITestOutputHelper logger)
+        public LiveCamLinkListenerTests(ITestOutputHelper logger)
         {
             this.logger = logger;
         }
@@ -21,32 +22,32 @@ namespace FS2020PlanePath.XUnitTests
         [Fact]
         public void TestSimpleGetPath()
         {
-            Uri localUri = new Uri("http://localhost:8000/xyz");
-            using (LiveCamLinkListener ws = new LiveCamLinkListener(localUri, path => $"~/{path}/~")) {
+            Uri localUri = new Uri("http://localhost:8000/kmlcam/xyz");
+            using (LiveCamLinkListener ws = new LiveCamLinkListener(localUri, request => $"~/{request.path}/~")) {
                 ws.Enable();
                 (var status, var body) = HttpGet(localUri);
                 string testResultString = $"status({status}); responseBody({body})";
-                logger.WriteLine($"{GetType().Name}.{MethodBase.GetCurrentMethod().Name}: result({testResultString})");
-                Assert.Equal("status(OK); responseBody(~//xyz/~)", testResultString);
+                //logger.WriteLine($"{GetType().Name}.{MethodBase.GetCurrentMethod().Name}: result({testResultString})");
+                Assert.Equal("status(OK); responseBody(~/kmlcam/xyz/~)", testResultString);
             }
         }
 
         [Fact]
         public void TestEnablement()
         {
-            Uri localUri = new Uri("http://localhost:8000/xyz");
+            Uri localUri = new Uri("http://localhost:8000/kmlcam/xyz");
             Action clientAction = () => HttpGet(localUri);
             using (LiveCamLinkListener ws = new LiveCamLinkListener(localUri, path => $"~/{path}/~"))
             {
-                Assert.ThrowsAny<Exception>(clientAction);  // created but not enabled
+                Assert.ThrowsAny<Exception>(clientAction);  // created but not enabled; should throw exception
                 ws.Enable();
                 clientAction.Invoke();                      // should be available now
                 ws.Disable();
-                Assert.ThrowsAny<Exception>(clientAction);  // disabled; not available
+                Assert.ThrowsAny<Exception>(clientAction);  // disabled, not available; should throw exception
                 ws.Enable();
-                clientAction.Invoke();                      // re-enabled; available again
+                clientAction.Invoke();                      // re-enabled, available again
                 ws.Dispose();
-                Assert.ThrowsAny<Exception>(clientAction);  // disposed; not available
+                Assert.ThrowsAny<Exception>(clientAction);  // disposed, not available; should throw exception
             }
         }
 

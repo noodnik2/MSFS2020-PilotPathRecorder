@@ -7,13 +7,13 @@ using Newtonsoft.Json;
 namespace FS2020PlanePath
 {
 
-    public class FilesystemRegistry<T> : IRegistry<T>
+    public class JsonFilesystemRegistry<T> : IRegistry<T>
     {
 
-        string fileNamePrefix;
-        string fileNameSuffix;
+        private string fileNamePrefix;
+        private string fileNameSuffix;
 
-        public FilesystemRegistry(string fileNamePrefix)
+        public JsonFilesystemRegistry(string fileNamePrefix)
         {
             this.fileNamePrefix = fileNamePrefix;
             this.fileNameSuffix = ".json";
@@ -29,6 +29,7 @@ namespace FS2020PlanePath
                     JsonSerializer serializer = new JsonSerializer();
                     value = (T) serializer.Deserialize(file, typeof(T));
                 }
+                Console.WriteLine($"loaded({fileName})");
                 return true;
             }
             catch (Exception ex)
@@ -50,6 +51,7 @@ namespace FS2020PlanePath
                     serializer.Formatting = Formatting.Indented;
                     serializer.Serialize(file, value);
                 }
+                Console.WriteLine($"saved({fileName})");
                 return true;
             } catch(Exception ex)
             {
@@ -64,6 +66,7 @@ namespace FS2020PlanePath
             try
             {
                 File.Delete(fileName);
+                Console.WriteLine($"deleted({fileName})");
                 return true;
             } catch(Exception ex)
             {
@@ -75,7 +78,7 @@ namespace FS2020PlanePath
         public List<string> GetIds(int maxCount)
         {
             // TODO use "EnumerateFiles" to limit based upon 'maxCount'
-            FileInfo[] foundFiles = new DirectoryInfo(".").GetFiles(FilenameForId("*"));
+            FileInfo[] foundFiles = new DirectoryInfo(".").GetFiles(FilenameFor("*"));
             Array.Sort(foundFiles, (f1, f2) => f2.LastAccessTimeUtc.CompareTo(f1.LastAccessTimeUtc));
             List<string> ids = new List<string>();
             int fileCount = 0;
@@ -83,7 +86,8 @@ namespace FS2020PlanePath
             {
                 string foundFileName = foundFile.Name;
                 string idsLeft = foundFileName.Substring(fileNamePrefix.Length);
-                ids.Add(idsLeft.Remove(idsLeft.Length - fileNameSuffix.Length));
+                string filesystemId = idsLeft.Remove(idsLeft.Length - fileNameSuffix.Length);
+                ids.Add(Uri.UnescapeDataString(filesystemId));
                 if (maxCount >= 0 && fileCount >= maxCount)
                 {
                     break;
@@ -91,12 +95,20 @@ namespace FS2020PlanePath
                 fileCount++;
             }
             // list of ids, most recently accessed first
+            Console.WriteLine($"retrieved({ids.Count}) ids");
             return ids;
         }
 
-        private string FilenameForId(string cleanId)
+        /// <returns>filename for filesystem-safe version of 'id'</returns>
+        public string FilenameForId(string id)
         {
-            return $"{fileNamePrefix}{cleanId}{fileNameSuffix}";
+            return FilenameFor(Uri.EscapeDataString(id));
+        }
+
+        /// <returns>filename for 'filesystemId'</returns>
+        public string FilenameFor(string filesystemId)
+        {
+            return $"{fileNamePrefix}{filesystemId}{fileNameSuffix}";
         }
 
     }

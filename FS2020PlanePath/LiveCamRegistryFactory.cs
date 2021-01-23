@@ -1,14 +1,32 @@
-﻿namespace FS2020PlanePath
+﻿using System;
+using System.IO;
+
+namespace FS2020PlanePath
 {
-    public static class LiveCamRegistryFactory
+    public class LiveCamRegistryFactory
     {
 
-        static IRegistry<KmlLiveCam> CreateRegistry()
+        public LiveCamRegistry NewRegistry()
         {
             return new LiveCamRegistry(
-                new FilesystemRegistry<LiveCamEntity>("FS2020ppLiveCamEntity")
+                new JsonFilesystemRegistry<LiveCamEntity>($"{typeof(KmlLiveCam).Name}_"),
+                alias => GetDefaultTemplate(alias, "-camera"),
+                alias => GetDefaultTemplate(alias, "-link")
             );
         }
+
+        private string GetDefaultTemplate(string alias, string suffix)
+        {
+            string defaultTemplateFilename = $"Resources/liveCam/defaults/{Uri.EscapeDataString(alias)}{suffix}";
+            Console.WriteLine($"loading default template for({alias}) from({defaultTemplateFilename})");
+            if (!File.Exists(defaultTemplateFilename))
+            {
+                Console.WriteLine($"default template for({alias}) not found({defaultTemplateFilename})");
+                return "";
+            }
+            return File.ReadAllText(defaultTemplateFilename);
+        }
+
     }
 
 }

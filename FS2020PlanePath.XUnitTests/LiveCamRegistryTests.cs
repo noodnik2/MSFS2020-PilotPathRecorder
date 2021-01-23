@@ -7,14 +7,17 @@ namespace FS2020PlanePath.XUnitTests
     {
         private const string Alias1 = "path1";
         private const string Alias2 = "path2";
-        private const string BaseUrl = "http://localhost:8765/";
         IRegistry<LiveCamEntity> persistenceRegistry;
         LiveCamRegistry liveCamRegistry;
 
         public LiveCamRegistryTests()
         {
             persistenceRegistry = new InMemoryRegistry<LiveCamEntity>();
-            liveCamRegistry = new LiveCamRegistry(persistenceRegistry);
+            liveCamRegistry = new LiveCamRegistry(
+                persistenceRegistry,
+                alias => $"default camera template for({alias})",
+                alias => $"default link template for({alias})"
+            );
         }
 
         [Fact]
@@ -87,13 +90,20 @@ namespace FS2020PlanePath.XUnitTests
         }
 
         [Fact]
-        public void TestUrlEncodedNetworkLinks()
+        public void TestSaveOfAliasRequiringFilesystemNameEncoding()
         {
-            const string urlRequringUrlEncoding = BaseUrl + "/one^two  three";
-            string urlEncodedAlias = LiveCamRegistry.GetAlias(urlRequringUrlEncoding);
-            Assert.Equal("/one%5Etwo%20%20three", urlEncodedAlias);
-            Assert.True(liveCamRegistry.Save(urlEncodedAlias, LiveCamRegistry.DefaultLiveCam(urlEncodedAlias)));
-            Assert.True(persistenceRegistry.TryGetById(urlEncodedAlias, out _));
+            const string alias = "/one/two^three.four  five";
+            Assert.True(liveCamRegistry.Save(alias, liveCamRegistry.DefaultLiveCam(alias)));
+            Assert.True(persistenceRegistry.TryGetById(alias, out _));
+        }
+
+        [Fact]
+        public void TestTryGetForNonLoadedAlias()
+        {
+            persistenceRegistry.Save("id", new LiveCamEntity());
+            // registry should be able to get an item that's in
+            // persistence but not yet in its cache
+            Assert.True(liveCamRegistry.TryGetById("id", out _));
         }
 
     }

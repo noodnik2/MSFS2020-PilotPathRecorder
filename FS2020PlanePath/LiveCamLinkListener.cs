@@ -9,13 +9,25 @@ namespace FS2020PlanePath
     public class LiveCamLinkListener : IDisposable
     {
 
-        private readonly List<string> supportedSchemes = new List<string> { Uri.UriSchemeHttp, Uri.UriSchemeHttps };
-        private readonly Func<string, string> pathHandler;
-        private readonly Uri webHostUri;
+        /// <exception cref="UriFormatException">malformed url</exception>
+        public static Uri ParseNetworkLink(string liveCamUrl)
+        {
+            return new Uri(liveCamUrl);
+        }
 
-        private Server server;
+        /// <exception cref="UriFormatException">malformed url</exception>
+        public static string GetAlias(string liveCamUrl)
+        {
+            return ParseNetworkLink(liveCamUrl).AbsolutePath.Substring(1);
+        }
 
-        public LiveCamLinkListener(Uri webHostUri, Func<string, string> pathHandler)
+        public class Request
+        {
+            public string path;
+            public Dictionary<string, string> query;
+        }
+
+        public LiveCamLinkListener(Uri webHostUri, Func<Request, string> pathHandler)
         {
             if (!supportedSchemes.Contains(webHostUri.Scheme)) {
                 throw new ArgumentException($"unsupported URI scheme: {webHostUri.Scheme}");
@@ -67,8 +79,22 @@ namespace FS2020PlanePath
 
         async Task RequestHandler(HttpContext context)
         {
-            await context.Response.Send(pathHandler.Invoke(context.Request.Url.RawWithoutQuery));
+            await context.Response.Send(
+                pathHandler.Invoke(
+                    new Request
+                    {
+                        path = context.Request.Url.RawWithoutQuery.Substring(1),
+                        query = context.Request.Query.Elements
+                    }
+                )
+            );
         }
+
+        private readonly List<string> supportedSchemes = new List<string> { Uri.UriSchemeHttp, Uri.UriSchemeHttps };
+        private readonly Func<Request, string> pathHandler;
+        private readonly Uri webHostUri;
+
+        private Server server;
 
     }
 }

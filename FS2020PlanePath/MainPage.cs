@@ -65,7 +65,7 @@ namespace FS2020PlanePath
             LoggingThresholdGroundVelTB.Text = FlightPathDB.GetTableOption("AutomaticLoggingThreshold");
             LoggingThresholdGroundVelTB.Enabled = AutomaticLoggingCB.Checked;
 
-            liveCamRegistry = new LiveCamRegistry(new FilesystemRegistry<LiveCamEntity>($"{typeof(KmlLiveCam).Name}_"));
+            liveCamRegistry = new LiveCamRegistryFactory().NewRegistry();
 
             LoadFlightList();
             LoadLiveCams();
@@ -145,8 +145,11 @@ namespace FS2020PlanePath
             }
         }
 
-        private string handleLinkListenerRequest(string alias)
+        private string handleLinkListenerRequest(LiveCamLinkListener.Request request)
         {
+
+            string alias = request.path;
+
             //Console.WriteLine($"received path({alias})");
             KmlLiveCam liveCam;
             if (!liveCamRegistry.TryGetById(alias, out liveCam))
@@ -812,9 +815,9 @@ namespace FS2020PlanePath
             string liveCamUrl = LiveCameraHostPortTB.Text;
             try
             {
-                hostUri = LiveCamRegistry.ParseNetworkLink(liveCamUrl);
+                hostUri = LiveCamLinkListener.ParseNetworkLink(liveCamUrl);
                 // ensure live cam is registered
-                liveCamRegistry.LoadByAlias(LiveCamRegistry.GetAlias(liveCamUrl));
+                liveCamRegistry.LoadByAlias(LiveCamLinkListener.GetAlias(liveCamUrl));
             }
             catch (UriFormatException ufe)
             {
@@ -827,8 +830,8 @@ namespace FS2020PlanePath
                 try
                 {
                     linkListener = new LiveCamLinkListener(
-                        hostUri, 
-                        request => handleLinkListenerRequest(request.Substring(1))
+                        hostUri,
+                        request => handleLinkListenerRequest(request)
                     );
                     linkListener.Enable();
                     activeLinkListener = linkListener;
@@ -864,7 +867,7 @@ namespace FS2020PlanePath
 
             try
             {
-                alias = LiveCamRegistry.GetAlias(liveCamUrl);
+                alias = LiveCamLinkListener.GetAlias(liveCamUrl);
             }
             catch (UriFormatException ufe)
             {
@@ -898,7 +901,7 @@ namespace FS2020PlanePath
             string liveCamUrl = LiveCameraHostPortTB.Text;
             try
             {
-                alias = LiveCamRegistry.GetAlias(liveCamUrl);
+                alias = LiveCamLinkListener.GetAlias(liveCamUrl);
             } catch(UriFormatException ufe)
             {
                 displayError("Could not Install Link", malformedUriErrorMessage(liveCamUrl, ufe));
@@ -960,25 +963,24 @@ namespace FS2020PlanePath
             string liveCamUrl = LiveCameraHostPortTB.Text;
             try
             {
-                LiveCamRegistry.ParseNetworkLink(liveCamUrl);
+                LiveCamLinkListener.ParseNetworkLink(liveCamUrl);
             } catch(UriFormatException ufe)
             {
                 displayError("Invalid Network Link", malformedUriErrorMessage(liveCamUrl, ufe));
-            }
-            
+            }            
         }
 
         private void Handle_LiveCameraKmlResetBT_Click(object sender, EventArgs e)
         {
             KmlLiveCam liveCam;
             string liveCamUrl = LiveCameraHostPortTB.Text;
-            string alias = LiveCamRegistry.GetAlias(liveCamUrl);
+            string alias = LiveCamLinkListener.GetAlias(liveCamUrl);
             if (!liveCamRegistry.TryGetById(alias, out liveCam))
             {
                 return;
             }
             
-            if (!LiveCamRegistry.IsDefaultDefinition(liveCam))
+            if (!liveCamRegistry.IsDefaultDefinition(liveCam, alias))
             {
                 if (!obtainConfirmation("Confirm Reset", $"Discard changes for:\n{liveCamUrl}"))
                 {

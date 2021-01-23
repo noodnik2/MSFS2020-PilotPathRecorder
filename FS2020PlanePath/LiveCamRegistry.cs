@@ -9,48 +9,48 @@ namespace FS2020PlanePath
 
         private IRegistry<KmlLiveCam> cacheRegistry;
         private IRegistry<LiveCamEntity> persistentRegistry;
+        private Func<string, string> defaultCameraTemplateGetter;
+        private Func<string, string> defaultLinkTemplateGetter;
 
-        public LiveCamRegistry(IRegistry<LiveCamEntity> persistentRegistry)
+        public LiveCamRegistry(
+            IRegistry<LiveCamEntity> persistentRegistry,
+            Func<string, string> defaultCameraTemplateGetter,
+            Func<string, string> defaultLinkTemplateGetter
+        )
         {
             cacheRegistry = new InMemoryRegistry<KmlLiveCam>();
-            this.persistentRegistry = persistentRegistry; ;
+            this.persistentRegistry = persistentRegistry;
+            this.defaultCameraTemplateGetter = defaultCameraTemplateGetter;
+            this.defaultLinkTemplateGetter = defaultLinkTemplateGetter;
         }
 
         public KmlLiveCam LoadByAlias(string alias)
         {
             KmlLiveCam kmlLiveCam;
-
-            // if we've already got it, 
-            if (TryGetById(alias, out kmlLiveCam))
+            if (!TryGetById(alias, out kmlLiveCam))
             {
-                // then return it
-                return kmlLiveCam;
+                kmlLiveCam = DefaultLiveCam(alias);
+                Save(alias, kmlLiveCam);
             }
-
-            // load it from the persistence provider
-            LiveCamEntity liveCamEntity;
-            if (persistentRegistry.TryGetById(alias, out liveCamEntity))
-            {
-                // load that into a liveCam using the current URL
-                kmlLiveCam = new KmlLiveCam(
-                    liveCamEntity.CameraTemplate,
-                    liveCamEntity.LinkTemplate
-                );
-                // save it (back) to the cache
-                cacheRegistry.Save(alias, kmlLiveCam);
-                return kmlLiveCam;
-            }
-
-            // if not found in the persistence provider, use a default one
-            kmlLiveCam = DefaultLiveCam(alias);
-            // and persist that for the alias
-            Save(alias, kmlLiveCam);
             return kmlLiveCam;
         }
 
         public bool TryGetById(string alias, out KmlLiveCam kmlLiveCam)
         {
-            return cacheRegistry.TryGetById(alias, out kmlLiveCam);
+            if (cacheRegistry.TryGetById(alias, out kmlLiveCam))
+            {
+                return true;
+            }
+
+            LiveCamEntity liveCamEntity;
+            if (persistentRegistry.TryGetById(alias, out liveCamEntity))
+            {
+                kmlLiveCam = new KmlLiveCam(liveCamEntity.CameraTemplate, liveCamEntity.LinkTemplate);
+                cacheRegistry.Save(alias, kmlLiveCam);
+                return true;
+            }
+
+            return false;
         }
 
         public bool Save(string alias, KmlLiveCam kmlLiveCam)
@@ -74,82 +74,30 @@ namespace FS2020PlanePath
             return persistentRegistry.GetIds(maxCount);
         }
 
-        /// <exception cref="UriFormatException">malformed url</exception>
-        public static Uri ParseNetworkLink(string liveCamUrl)
-        {
-            return new Uri(liveCamUrl);
-        }
-
-        /// <exception cref="UriFormatException">malformed url</exception>
-        public static string GetAlias(string liveCamUrl)
-        {
-            return ParseNetworkLink(liveCamUrl).AbsolutePath.Substring(1);
-        }
-
-        public static bool IsDefaultDefinition(KmlLiveCam kmlLiveCam)
+        public bool IsDefaultDefinition(KmlLiveCam kmlLiveCam, string alias)
         {
             return (
-                kmlLiveCam.Camera.Template == LiveCamConstants.DefaultCameraKmlTemplate
-             && kmlLiveCam.Link.Template == LiveCamConstants.DefaultNetworkLinkKmlTemplate   
+                kmlLiveCam.Camera.Template == defaultCameraTemplateGetter.Invoke(alias)
+             && kmlLiveCam.Link.Template == defaultLinkTemplateGetter.Invoke(alias)
             );
         }
 
-        public static KmlLiveCam DefaultLiveCam(string alias)
+        public KmlLiveCam DefaultLiveCam(string alias)
         {
             return(
                 new KmlLiveCam(
-                    LiveCamConstants.DefaultCameraKmlTemplate,
-                    LiveCamConstants.DefaultNetworkLinkKmlTemplate
+                    defaultCameraTemplateGetter.Invoke(alias),
+                    defaultLinkTemplateGetter.Invoke(alias)
                 )
             );
-        }
-
-        private static class LiveCamConstants
-        {
-
-            public const string DefaultCameraKmlTemplate = @"<?xml version='1.0' encoding='UTF-8'?>
-<kml xmlns = 'http://www.opengis.net/kml/2.2' xmlns:gx='http://www.google.com/kml/ext/2.2' xmlns:kml='http://www.opengis.net/kml/2.2' xmlns:atom='http://www.w3.org/2005/Atom'>
-  <NetworkLinkControl>
-    <Camera>
-      <longitude>{longitude}</longitude>
-      <latitude>{latitude}</latitude>
-      <altitude>{altitude}</altitude>
-      <heading>{heading}</heading>
-      <tilt>{tilt}</tilt>
-      <roll>{roll}</roll>
-      <altitudeMode>absolute</altitudeMode>
-    </Camera>
-  </NetworkLinkControl>
-</kml>";
-
-            public const string DefaultNetworkLinkKmlTemplate =
-    @"<?xml version='1.0' encoding='UTF-8'?>
-<kml xmlns='http://www.opengis.net/kml/2.2' xmlns:gx='http://www.google.com/kml/ext/2.2' xmlns:kml='http://www.opengis.net/kml/2.2' xmlns:atom='http://www.w3.org/2005/Atom'>
-<NetworkLink>
-	<name>MSFS2020-PilotPathRecorder Live Camera ({alias})</name>
-	<flyToView>1</flyToView>
-	<Link>
-		<href>{url}</href>
-        <!-- onChange, onInterval, ... -->
-		<refreshMode>onChange</refreshMode>
-        <!-- number of seconds between refreshs -->
-		<refreshInterval>1</refreshInterval>
-        <!-- never, onStop, onRequest ... -->
-		<viewRefreshMode>onStop</viewRefreshMode>
-        <!-- number of seconds after camera stops -->
-		<viewRefreshTime>0</viewRefreshTime>
-	</Link>
-</NetworkLink>
-</kml>";
-
         }
 
     }
 
     public class LiveCamEntity
     {
-        public string CameraTemplate { get; set; }
-        public string LinkTemplate { get; set; }
+        public string CameraTemplate { get; set; } = "";
+        public string LinkTemplate { get; set; } = "";
     }
 
 }
