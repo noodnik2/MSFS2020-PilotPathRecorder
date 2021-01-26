@@ -17,6 +17,9 @@ namespace FS2020PlanePath.XUnitTests
 
         private readonly ITestOutputHelper logger;
         private KmlCameraParameterValues[] sequence = new KmlCameraParameterValues[100];
+        private TemplateRendererFactory templateRendererFactory = new TemplateRendererFactory(
+            (message, details) => $"template rendering error({message}), details({details})"
+        );
         private int sequence_position = 0;
 
         public TemplateRendererTests(ITestOutputHelper logger)
@@ -46,7 +49,7 @@ namespace FS2020PlanePath.XUnitTests
             };
             foreach (string templateVersion in templateVersions)
             {
-                IStringTemplateRenderer<RenderValues> testRenderer = new GenericTemplateRenderer<RenderValues>(templateVersion);
+                IStringTemplateRenderer<RenderValues> testRenderer = templateRendererFactory.newTemplateRenderer<RenderValues>(templateVersion);
                 Assert.Equal("<kml iv1='9965' sv1='' />", testRenderer.Render(new RenderValues { iv1 = 9965 }));
             }
         }
@@ -54,7 +57,7 @@ namespace FS2020PlanePath.XUnitTests
         [Fact]
         public void TestScriptContextWithFunctions()
         {
-            GenericTemplateRenderer<ScriptContext> renderer = new GenericTemplateRenderer<ScriptContext>(
+            IStringTemplateRenderer<ScriptContext> renderer = templateRendererFactory.newTemplateRenderer<ScriptContext>(
                 "GetFlights(seq).Length.ToString()"
             );
 

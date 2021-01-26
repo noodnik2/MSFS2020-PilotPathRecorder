@@ -1015,6 +1015,7 @@ where s.flightsamplesid = d.flightsamplesid and sample_datetimestamp > @earliest
                         }
                     );
                 }
+                Console.WriteLine($"query for flightId({pk}) since({earliestDateTimestamp}) found({FlightPath.Count}) entries");
                 return FlightPath;
             }
             catch (Exception ex)

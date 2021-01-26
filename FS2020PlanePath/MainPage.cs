@@ -28,7 +28,7 @@ namespace FS2020PlanePath
         bool bLoggingEnabled = false;
         MSFS2020_SimConnectIntergration simConnectIntegration = new MSFS2020_SimConnectIntergration();
         LiveCamLinkListener activeLinkListener;
-        ScKmlAdapter scKmlAdapter = new ScKmlAdapter();
+        ScKmlAdapter scKmlAdapter;
         LiveCamRegistry liveCamRegistry;
         FS2020_SQLLiteDB FlightPathDB;
         int nCurrentFlightID;
@@ -36,6 +36,30 @@ namespace FS2020PlanePath
         FlightPlan flightPlan;
         bool bStartedLoggingDueToSpeed;
         bool bStoppedLoggingDueToSpeed;
+
+        public KmlCameraParameterValues[] getKmlCameraUpdates(int flightId, long seqSince)
+        {
+            Console.WriteLine($"looking for camera updates({flightId}, {seqSince})");
+            List<FlightPathData> flightPaths = FlightPathDB.GetLiveCamTrackSinceDateTimestamp(flightId, seqSince);
+            KmlCameraParameterValues[] kmlCameraParameterValues = new KmlCameraParameterValues[flightPaths.Count];
+            int cameraIndex = 0;
+            foreach (var fp in flightPaths)
+            {
+                kmlCameraParameterValues[cameraIndex++] = new KmlCameraParameterValues
+                {
+                    seq = fp.timestamp,
+                    altitude = fp.altitude,
+                    longitude = fp.longitude,
+                    latitude = fp.latitude,
+                    tilt = fp.plane_pitch,
+                    roll = fp.plane_bank,
+                    heading = fp.plane_heading_true
+                };
+            }
+
+            return kmlCameraParameterValues;
+        }
+
 
         public MainPage()
         {
@@ -69,6 +93,7 @@ namespace FS2020PlanePath
 
             LoadFlightList();
             LoadLiveCams();
+            scKmlAdapter = new ScKmlAdapter(new GetMultitrackUpdatesDelegate(getKmlCameraUpdates));
 
         }
 
@@ -148,13 +173,19 @@ namespace FS2020PlanePath
         private string handleLinkListenerRequest(LiveCamLinkListener.Request request)
         {
 
-            string alias = request.path;
+            scKmlAdapter.KmlCameraValues.query = request.query;
+            if (request.path.StartsWith("_"))
+            {
+                Console.WriteLine($"handling internal request({request.path})");
+                return handleInternalRequest(request);
+            }
 
+            string alias = request.path;
             //Console.WriteLine($"received path({alias})");
             KmlLiveCam liveCam;
             if (!liveCamRegistry.TryGetById(alias, out liveCam))
             {
-                return $"<error text='LiveCam({alias}) not found; request ignored' />";
+                return KmlLiveCam.TemplateRendererFactory.rendererErrorHandler("request ignored", $"LiveCam({alias}) not found");
             }
 
             // noodnik2 TODO - use something like this for multitrack support
@@ -162,6 +193,18 @@ namespace FS2020PlanePath
             //List<FlightPathData> lists = FlightPathDB.GetLiveCamTrackSinceDateTimestamp(nFlightID, 0);
 
             return liveCam.Camera.Render(scKmlAdapter.KmlCameraValues);
+        }
+
+        private string handleInternalRequest(LiveCamLinkListener.Request request)
+        {
+            if (request.path == "_evalCameraTemplate")
+            {
+                return (
+                    KmlLiveCam.TemplateRendererFactory.newTemplateRenderer<KmlCameraParameterValues>(request.GetBody())
+                    .Render(scKmlAdapter.KmlCameraValues)
+                );
+            }
+            return KmlLiveCam.TemplateRendererFactory.rendererErrorHandler("unrecognized internal route", request.path);
         }
 
         private void StartLoggingBtn_Click(object sender, EventArgs e)
@@ -260,7 +303,8 @@ namespace FS2020PlanePath
                                                      new FlightWaypointData(simPlaneData.gps_wp_next_latitude, simPlaneData.gps_wp_next_longitude, simPlaneData.gps_wp_next_altitude, simPlaneData.gps_wp_next_id),
                                                      simPlaneData.gps_flight_plan_wp_index, simPlaneData.gps_flight_plan_wp_count);
 
-                    scKmlAdapter.Update(simPlaneData);
+                    scKmlAdapter.Update(simPlaneData, nCurrentFlightID, dtLastDataRecord.Ticks);
+
                 }
             }
         }

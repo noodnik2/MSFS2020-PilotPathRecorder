@@ -1,7 +1,4 @@
-﻿using System;
-using System.Reflection;
-using System.Xml;
-using SharpKml.Base;
+﻿using SharpKml.Base;
 using SharpKml.Dom;
 using SharpKml.Dom.GX;
 using System.Collections.Generic;
@@ -97,7 +94,7 @@ namespace FS2020PlanePath
 
         private List<KmlCameraParameterValues> kmlCameraParameterValuesList = new List<KmlCameraParameterValues>();
         private int trackNo;
-        private int lastSeq;
+        private long lastSeq;
 
     }
 

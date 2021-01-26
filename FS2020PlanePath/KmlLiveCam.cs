@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace FS2020PlanePath
 {
@@ -6,10 +7,14 @@ namespace FS2020PlanePath
     public class KmlLiveCam : ILiveCam<KmlCameraParameterValues, KmlNetworkLinkValues>
     {
 
+        public static TemplateRendererFactory TemplateRendererFactory { get; } = new TemplateRendererFactory(
+            (message, details) => $"<rendererError message='{message}' details='{details}' />"
+        );
+
         public KmlLiveCam(string cameraTemplate, string linkTemplate)
         {
-            _camera = new GenericTemplateRenderer<KmlCameraParameterValues>(cameraTemplate);
-            _link = new GenericTemplateRenderer<KmlNetworkLinkValues>(linkTemplate);
+            _camera = TemplateRendererFactory.newTemplateRenderer<KmlCameraParameterValues>(cameraTemplate);
+            _link = TemplateRendererFactory.newTemplateRenderer<KmlNetworkLinkValues>(linkTemplate);
         }
 
         public IStringTemplateRenderer<KmlCameraParameterValues> Camera { get { return _camera; } }
@@ -29,6 +34,8 @@ namespace FS2020PlanePath
 
     }
 
+    public delegate KmlCameraParameterValues[] GetMultitrackUpdatesDelegate(int flightId, long sinceSeq);
+
     // see: https://developers.google.com/kml/documentation/kmlreference#camera
     public class KmlCameraParameterValues
     {
@@ -38,7 +45,11 @@ namespace FS2020PlanePath
         public double heading { get; set; }
         public double tilt { get; set; }
         public double roll { get; set; }
-        public int seq { get; set; }    // update sequence
+        public long seq { get; set; }    // update sequence
+        public int flightId { get; set; }
+        public GetMultitrackUpdatesDelegate getMultitrackUpdates { get; set; }
+        public Dictionary<string, string> query { get; set; }
+
     }
 
     // see: https://developers.google.com/kml/documentation/kmlreference#networklink

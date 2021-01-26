@@ -8,9 +8,20 @@ namespace FS2020PlanePath
 
         const double FEET_PER_METER = 3.28084;
 
-        public KmlCameraParameterValues KmlCameraValues { get; } = new KmlCameraParameterValues();
+        private KmlCameraParameterValues _kmlCameraValues;
+        public KmlCameraParameterValues KmlCameraValues { get => _kmlCameraValues; }
 
-        public void Update(MSFS2020_SimConnectIntergration.SimPlaneDataStructure simPlaneDataStructure)
+        public ScKmlAdapter(GetMultitrackUpdatesDelegate getMultitrackUpdatesDelegate)
+        {
+            _kmlCameraValues = new KmlCameraParameterValues();
+            _kmlCameraValues.getMultitrackUpdates = getMultitrackUpdatesDelegate;
+        }
+
+        public void Update(
+            MSFS2020_SimConnectIntergration.SimPlaneDataStructure simPlaneDataStructure,
+            int flightId,
+            long seq
+        )
         {
 
             // see: https://developers.google.com/kml/documentation/kmlreference
@@ -22,7 +33,8 @@ namespace FS2020PlanePath
             KmlCameraValues.heading = simPlaneDataStructure.plane_heading_true;
             KmlCameraValues.tilt = Math.Max(Math.Min(90 - simPlaneDataStructure.plane_pitch, 180), 0);
             KmlCameraValues.roll = simPlaneDataStructure.plane_bank;
-            KmlCameraValues.seq = KmlCameraValues.seq + 1;
+            KmlCameraValues.seq = seq;
+            KmlCameraValues.flightId = flightId;
 
             // DebugConversion(simPlaneDataStructure);
 

@@ -25,6 +25,7 @@ namespace FS2020PlanePath
         {
             public string path;
             public Dictionary<string, string> query;
+            public Func<string> GetBody;
         }
 
         public LiveCamLinkListener(Uri webHostUri, Func<Request, string> pathHandler)
@@ -79,15 +80,20 @@ namespace FS2020PlanePath
 
         async Task RequestHandler(HttpContext context)
         {
-            await context.Response.Send(
+            Console.WriteLine($"handling request({context.Request.Url.RawWithQuery})");
+            string listenerResponseBody = (
                 pathHandler.Invoke(
                     new Request
                     {
                         path = context.Request.Url.RawWithoutQuery.Substring(1),
-                        query = context.Request.Query.Elements
+                        query = context.Request.Query.Elements,
+                        GetBody = () => context.Request.DataAsString()
                     }
                 )
             );
+            Console.WriteLine($"listenerResponseBody({listenerResponseBody})");
+            //Console.WriteLine($"listenerResponseBody.Length({listenerResponseBody.Length})");
+            await context.Response.Send(listenerResponseBody);
         }
 
         private readonly List<string> supportedSchemes = new List<string> { Uri.UriSchemeHttp, Uri.UriSchemeHttps };

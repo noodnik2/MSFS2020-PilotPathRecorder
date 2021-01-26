@@ -7,40 +7,109 @@ using SharpKml.Base;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
+using RazorEngineCore;
 
 namespace FS2020PlanePath
 {
 
-    /// <summary>
-    /// Generalized template renderer which will delegate rendering of the passed template to the
-    /// appropriate renderer, based upon hints as to the template's type (e.g., KML or Script).
-    /// </summary>
-    /// <typeparam name="T">object whose properties can be referenced by the template</typeparam>
-    public class GenericTemplateRenderer<T> : IStringTemplateRenderer<T>
+    public delegate string TemplateRendererErrorHandler(string message, string details);
+
+    public class TemplateRendererFactory
     {
 
-        private IStringTemplateRenderer<T> renderer;
+        public TemplateRendererErrorHandler rendererErrorHandler;
 
-        public string Render(T propertyValues)
+        public TemplateRendererFactory(TemplateRendererErrorHandler rendererErrorHandler)
         {
-            return renderer.Render(propertyValues);
+            this.rendererErrorHandler = rendererErrorHandler;
         }
 
-        public string Template { get => renderer.Template; }
-
-        public string[] Diagnostics => renderer.Diagnostics;
-
-        public GenericTemplateRenderer(string template)
+        public IStringTemplateRenderer<T> newTemplateRenderer<T>(string template)
         {
+
+            if (template.TrimStart().StartsWith("@{"))
+            {
+                // template is a Razor script which begins with "@{"
+                return new RazorTemplateRenderer<T>(template, rendererErrorHandler);
+            }
+
             if (template.TrimStart().StartsWith("<"))
             {
                 // template is KML text with placeholders
-                renderer = new KmlTemplateRenderer<T>(template);
+                return new KmlTemplateRenderer<T>(template, rendererErrorHandler);
             }
-            else
+
+            // template is a script
+            return new ScriptTemplateRenderer<T>(template, rendererErrorHandler);
+        }
+
+    }
+
+    /// <summary>
+    /// Razor Script whose string return value will become the rendered result
+    /// </summary>
+    /// <typeparam name="V">type of object whose property values will be available to the script during its execution</typeparam>
+    public class RazorTemplateRenderer<V> : IStringTemplateRenderer<V>
+    {
+
+        private string sourceRazorTemplate;
+        private IRazorEngineCompiledTemplate compiledRazorTemplate;
+        private TemplateRendererErrorHandler rendererErrorHandler;
+        private string errors;
+
+        public RazorTemplateRenderer(string razorTemplate, TemplateRendererErrorHandler rendererErrorHandler)
+        {
+            sourceRazorTemplate = razorTemplate;
+            this.rendererErrorHandler = rendererErrorHandler;
+        }
+
+        public string Render(V propertyValues)
+        {
+            compile();
+            if (errors != null)
             {
-                // template is a script
-                renderer = new ScriptTemplateRenderer<T>(template);
+                return rendererErrorHandler("error(s) evaluating razor script", errors);
+            }
+            try
+            {
+                return compiledRazorTemplate.Run(propertyValues);
+            } catch(Exception rbe)
+            {
+                return rendererErrorHandler("script threw exception", rbe.Message);
+            }
+        }
+
+        private void compile()
+        {
+            if (compiledRazorTemplate == null)
+            {
+                try
+                {
+                    compiledRazorTemplate = new RazorEngine().Compile(sourceRazorTemplate);
+                }
+                catch (Exception ex)
+                {
+                    errors = ex.Message;
+                }
+            }
+        }
+
+        public string Template { get => sourceRazorTemplate; }
+
+        public string[] Diagnostics
+        {
+            get
+            {
+                compile();
+                if (errors == null)
+                {
+                    return new string[0];
+                }
+                return new string[]
+                {
+                    "Razor Script:",
+                    errors
+                };
             }
         }
 
@@ -54,9 +123,11 @@ namespace FS2020PlanePath
     {
 
         private Script<string> _script;
+        private TemplateRendererErrorHandler rendererErrorHandler;
 
-        public ScriptTemplateRenderer(string scriptTemplate)
+        public ScriptTemplateRenderer(string scriptTemplate, TemplateRendererErrorHandler rendererErrorHandler)
         {
+            this.rendererErrorHandler = rendererErrorHandler;
             _script = CSharpScript.Create<string>(
                 code: scriptTemplate,
                 globalsType: typeof(V)
@@ -72,8 +143,7 @@ namespace FS2020PlanePath
             Task<ScriptState<string>> scriptStateTask = _script.RunAsync(propertyValues);
             if (!scriptStateTask.Wait(2000))
             {
-                Console.WriteLine("ERROR: script execution timed out");
-                return "";
+                return rendererErrorHandler("ERROR: script execution timed out", "");
             }
             return scriptStateTask.Result.ReturnValue;
         }
@@ -114,8 +184,9 @@ namespace FS2020PlanePath
     {
 
         private string kmlTemplate;
+        private TemplateRendererErrorHandler rendererErrorHandler;
 
-        public KmlTemplateRenderer(string kmlTemplate)
+        public KmlTemplateRenderer(string kmlTemplate, TemplateRendererErrorHandler rendererErrorHandler)
         {
             this.kmlTemplate = kmlTemplate;
         }

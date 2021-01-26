@@ -1,6 +1,7 @@
-﻿using Xunit;
+﻿using System;
+using System.Collections.Generic;
+using Xunit;
 using Xunit.Abstractions;
-using System;
 
 namespace FS2020PlanePath.XUnitTests
 {
@@ -18,7 +19,7 @@ namespace FS2020PlanePath.XUnitTests
         [Fact]
         public void TestCamerTemplateTextRendering()
         {
-            var kmlLiveCam = new KmlLiveCam("<cam({seq})", "<link({alias},{url})");
+            var kmlLiveCam = new KmlLiveCam( "<cam({seq})", "<link({alias},{url})");
             KmlCameraParameterValues camValues = new KmlCameraParameterValues
             {
                 seq = 99
@@ -44,50 +45,93 @@ namespace FS2020PlanePath.XUnitTests
         [Fact]
         public void GenerateMultiTrackKmlDocTest()
         {
+            foreach (KmlCameraParameterValues kmlCameraParameterValues in getKmlCameraUpdates(0))
+            {
+                multiTrackKmlGenerator.AddKmlCameraParameterValues(kmlCameraParameterValues);
+            }
+            logger.WriteLine($"{multiTrackKmlGenerator.GetMultiTrackKml()}");
+        }
+
+        [Fact]
+        public void RazorMultiTrackTest()
+        {
+            string razorMultiTrackCameraTemplate = @"
+@{ var updates = Model.multitrack.GetUpdates(); }
+<?xml version='1.0' encoding='UTF-8'?>
+<kml
+  xmlns='http://www.opengis.net/kml/2.2'
+  xmlns:gx='http://www.google.com/kml/ext/2.2'
+>
+  <NetworkLinkControl>
+    <cookie>seq=@Model.multitrack.seq</cookie>
+    <cookie>flightId=@Model.multitrack.flightId</cookie>
+    <Update>
+      <Create>
+        <gx:MultiTrack targetId='pp'>
+          <gx:Track>
+            @foreach (var update in updates) {
+            <gx:coord>
+              @update.longitude
+              @update.latitude
+              @update.altitude
+            </gx:coord>
+            }
+            @foreach (var update in updates) {
+            <gx:angles>
+              @update.heading
+              @update.tilt
+              @update.roll
+            </gx:angles>
+            }
+          </gx:Track>
+        </gx:MultiTrack>
+      </Create>
+    </Update>
+  </NetworkLinkControl>
+</kml>";
+            KmlCameraParameterValues kmlCameraParameterValues = new KmlCameraParameterValues();
+
+            string renderedKml = (
+                new TemplateRendererFactory((message, details) => "renderer error: message({message}), details({details})")
+                .newTemplateRenderer<KmlCameraParameterValues>(razorMultiTrackCameraTemplate)
+                .Render(kmlCameraParameterValues)
+            );
+
+            logger.WriteLine($"renderedKml({renderedKml})");
+        }
+
+        private static KmlCameraParameterValues[] getKmlCameraUpdates(int seq0)
+        {
             Random random = new Random();
-            int seq = 0;
+            int seq = seq0;
             double lat0 = 37.7749;
             double lon0 = 122.4194;
-            double alt0 = 1000;
+            double alt0 = 1000 + seq0;
             double hdg0 = random.Next(360);
             double pit0 = 0;
             double rol0 = 0;
-            for (int i = 1; i < 5; i++)
+            List<KmlCameraParameterValues> valueList = new List<KmlCameraParameterValues>();
+            int nUdates = random.Next(10);
+            for (int i = 0; i < nUdates; i++)
             {
-                for (int j = 0; j < i; j++)
-                {
-                    double latOffset = seq * random.NextDouble() * 0.001;
-                    double lonOffset = seq * random.NextDouble() * 0.002;
-                    double altOffset = seq * random.NextDouble() * 10;
-                    addCameraValues(
-                        seq, 
-                        lat0 + latOffset,
-                        lon0 + lonOffset, 
-                        alt0 + altOffset,
-                        hdg0 + random.Next(3),
-                        pit0 + random.Next(5),
-                        rol0 + random.Next(10)
-                    );
-                    seq = seq + 1;
-                }
-                logger.WriteLine($"r{seq}({multiTrackKmlGenerator.GetMultiTrackKml()})");
+                double latOffset = seq * random.NextDouble() * 0.001;
+                double lonOffset = seq * random.NextDouble() * 0.002;
+                double altOffset = seq * random.NextDouble() * 10;
+                valueList.Add(
+                    new KmlCameraParameterValues
+                    {
+                        seq = seq,
+                        latitude = lat0 + latOffset,
+                        longitude = lon0 + lonOffset,
+                        altitude = alt0 + altOffset,
+                        heading = hdg0 + random.Next(3),
+                        tilt = pit0 + random.Next(5),
+                        roll = rol0 + random.Next(10)
+                    }
+                );
+                seq = seq + 1;
             }
-        }
-
-        private void addCameraValues(int seq, double lat, double lon, double alt, double hdg, double pit, double rol)
-        {
-            multiTrackKmlGenerator.AddKmlCameraParameterValues(
-                new KmlCameraParameterValues
-                {
-                    seq = seq,
-                    latitude = lat,
-                    longitude = lon,
-                    altitude = alt,
-                    heading = hdg,
-                    tilt = pit,
-                    roll = rol
-                }
-            );
+            return valueList.ToArray();
         }
 
     }
