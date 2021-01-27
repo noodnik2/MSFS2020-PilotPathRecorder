@@ -172,6 +172,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GeoCalcUtils.cs" />
     <Compile Include="JsonFilesystemRegistry.cs" />
     <Compile Include="LiveCamRegistry.cs" />
     <Compile Include="FolderSelectDialog.cs" />
@@ -238,7 +239,18 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <None Include="Resources\liveCam\defaults\model.dae" />
+    <EmbeddedResource Include="Resources\liveCam\defaults\model.dae">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\liveCam\defaults\mc2.init-camera">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\liveCam\defaults\mc2.init-link">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\liveCam\defaults\mc2.update-camera">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

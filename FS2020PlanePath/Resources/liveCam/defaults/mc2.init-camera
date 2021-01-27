@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<kml
+    xmlns='http://www.opengis.net/kml/2.2'
+    xmlns:gx="http://www.google.com/kml/ext/2.2"
+>
+    <Document>
+
+        <name>Second Multicam Example: Init Camera</name>
+
+        <Placemark>
+
+            <Point>
+                <altitudeMode>absolute</altitudeMode>
+                <coordinates>{longitude},{latitude},{altitude}</coordinates>
+            </Point>
+
+            <gx:MultiTrack id="pp">
+                <altitudeMode>absolute</altitudeMode>
+                <gx:interpolate>1</gx:interpolate>
+                <gx:Track id="pp_t1">
+                </gx:Track>
+            </gx:MultiTrack>
+        </Placemark>
+
+        <NetworkLink>
+            <name>mc.init-camera network link</name>
+            <flyToView>1</flyToView>
+            <Link>
+                <href>http://localhost:8000/mc.update</href>
+                <httpQuery>flightId={flightId}&amp;seq={seq}</httpQuery>
+                <refreshMode>onInterval</refreshMode>
+                <refreshInterval>1</refreshInterval>
+                <viewRefreshMode>onStop</viewRefreshMode>
+                <viewRefreshTime>0</viewRefreshTime>
+            </Link>
+        </NetworkLink>
+
+    </Document>
+</kml>

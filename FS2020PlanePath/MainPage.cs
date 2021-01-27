@@ -37,10 +37,79 @@ namespace FS2020PlanePath
         bool bStartedLoggingDueToSpeed;
         bool bStoppedLoggingDueToSpeed;
 
+        // TODO test only - remove this
+        static FlightPathData currentSample = new FlightPathData
+        {
+            timestamp = DateTime.Now.Ticks,
+            longitude = -121.6601805,
+            latitude = 38.0282797,
+            altitude = 2000,
+            plane_pitch = 0,
+            plane_bank = 0,
+            plane_heading_true = 200,
+            ground_velocity = 100           // nm/hr
+        };
+
+       // TODO test only - remove this method
+       private List<FlightPathData> GetLiveCamTrackSinceDateTimestamp(int pk, long earliestTimestamp)
+        {
+            List<FlightPathData> samples = new List<FlightPathData>();
+            long ticksPerSample = System.TimeSpan.TicksPerSecond / 10;
+            Random random = new Random();
+
+            for (
+                currentSample.timestamp = Math.Max(currentSample.timestamp, earliestTimestamp) + ticksPerSample;
+                currentSample.timestamp <= DateTime.Now.Ticks;
+                currentSample.timestamp += ticksPerSample
+            )
+            {
+
+                double distancePerHr = currentSample.ground_velocity += random.NextDouble() - 0.5;
+                double distancePerTick = distancePerHr / (3600 * System.TimeSpan.TicksPerSecond);
+                double distancePerSample = distancePerTick * ticksPerSample;
+
+                double bearing = GeoCalcUtils.normalizeCompassCoordinate(
+                    currentSample.plane_heading_true + 5 * (random.NextDouble() - 0.5)
+                );
+
+                (double lat, double lon) to = GeoCalcUtils.calcLatLonOffset(
+                    GeoCalcUtils.normalizeIso6709Coordinate(currentSample.latitude),
+                    GeoCalcUtils.normalizeIso6709Coordinate(currentSample.longitude),
+                    bearing,
+                    distancePerSample
+                );
+
+                Console.WriteLine($"brg({bearing}),v({distancePerHr}),d({distancePerSample}),p({GeoCalcUtils.pcoord(to)}");
+
+                currentSample.ground_velocity = distancePerHr;
+                currentSample.plane_heading_true = bearing;
+                currentSample.latitude = to.lat;
+                currentSample.longitude = to.lon;
+                samples.Add(
+                    new FlightPathData
+                    {
+                        timestamp = currentSample.timestamp,
+                        longitude = currentSample.longitude,
+                        latitude = currentSample.latitude,
+                        altitude = currentSample.altitude,
+                        plane_pitch = currentSample.plane_pitch,
+                        plane_bank = currentSample.plane_bank,
+                        plane_heading_true = currentSample.plane_heading_true,
+                        ground_velocity = currentSample.ground_velocity
+                    }
+                );
+                
+            }
+
+            return samples;
+        }
+
         public KmlCameraParameterValues[] getKmlCameraUpdates(int flightId, long seqSince)
         {
             Console.WriteLine($"looking for camera updates({flightId}, {seqSince})");
-            List<FlightPathData> flightPaths = FlightPathDB.GetLiveCamTrackSinceDateTimestamp(flightId, seqSince);
+            // TODO: restore - generate random walk for testing purposes
+            //List<FlightPathData> flightPaths = FlightPathDB.GetLiveCamTrackSinceDateTimestamp(flightId, seqSince);
+            List<FlightPathData> flightPaths = GetLiveCamTrackSinceDateTimestamp(flightId, seqSince);
             KmlCameraParameterValues[] kmlCameraParameterValues = new KmlCameraParameterValues[flightPaths.Count];
             int cameraIndex = 0;
             foreach (var fp in flightPaths)
