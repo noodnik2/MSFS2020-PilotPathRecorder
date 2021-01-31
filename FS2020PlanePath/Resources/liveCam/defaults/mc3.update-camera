@@ -44,23 +44,28 @@
   xmlns:gx='http://www.google.com/kml/ext/2.2'
 >
   <NetworkLinkControl>
-    <linkName>Second Multicam Example: Update Camera</linkName>
+    <linkName>Third Multicam Example: Subsequent Updates Camera</linkName>
     <cookie>seq=@nextSeq&amp;flightId=@flightId</cookie>
     <Update>
-      <targetHref>http://localhost:8000/mc2.init</targetHref>
+      <targetHref>http://localhost:8000/mc3.init</targetHref>
       <Create>
         <gx:MultiTrack targetId='pp'>
+           <altitudeMode>absolute</altitudeMode>
+
           <gx:Track>
-          <Model>
             <altitudeMode>absolute</altitudeMode>
-            <Orientation>
-              <heading>90</heading>
-            </Orientation>
-            <Scale><x>16</x><y>16</y><z>16</z></Scale>
-            <Link>
-              <href>http://localhost:8000/model.dae</href>
-            </Link>
-          </Model>
+            
+            <Model>
+              <altitudeMode>absolute</altitudeMode>
+              <Orientation>
+                <heading>90</heading>
+              </Orientation>
+              <Scale><x>16</x><y>16</y><z>16</z></Scale>
+              <Link>
+                <href>http://localhost:8000/models/model.dae</href>
+              </Link>
+            </Model>
+
             @foreach (var update in updates) {
             <gx:coord>
               @update.longitude

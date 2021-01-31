@@ -178,10 +178,11 @@
     <Compile Include="FolderSelectDialog.cs" />
     <Compile Include="FS2020_SQLLiteDB.cs" />
     <Compile Include="IRegistry.cs" />
-    <Compile Include="LiveCamLinkListener.cs" />
+    <Compile Include="HttpListener.cs" />
     <Compile Include="InMemoryRegistry.cs" />
     <Compile Include="KmlLiveCam.cs" />
     <Compile Include="LiveCamRegistryFactory.cs" />
+    <Compile Include="LiveCamServer.cs" />
     <Compile Include="MainPage.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -239,7 +240,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <EmbeddedResource Include="Resources\liveCam\defaults\model.dae">
+    <EmbeddedResource Include="Resources\liveCam\models\model.dae">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\liveCam\defaults\mc2.init-camera">
@@ -249,6 +250,30 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\liveCam\defaults\mc2.update-camera">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\liveCam\defaults\mc3.init-camera">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\liveCam\defaults\mc3.init-link">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\liveCam\defaults\mc3.update-camera">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\liveCam\defaults\birdseye-camera">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\liveCam\defaults\birdseye-link">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\liveCam\defaults\birdseye.update-camera">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\liveCam\defaults\cockpit-camera">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\liveCam\defaults\cockpit-link">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
   </ItemGroup>
@@ -285,6 +310,15 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\liveCam\defaults\mc.update-link">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\liveCam\models\model\Metal_Aluminum_Anodized.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\liveCam\models\model\texture.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\liveCam\models\model\texture_0.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <Content Include="SimConnect.dll">

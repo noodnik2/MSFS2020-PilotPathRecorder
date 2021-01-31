@@ -20,7 +20,7 @@ will be activated at the location specified in the "Network Link" textbox (just 
 of the checkbox), enabling Google Earth to periodically retrieve the current position
 of the simulated flight.
 
-Though the default value provided for the Network Link URL (e.g., `http://localhost:8000/kmlcam`)
+Though the default value provided for the Network Link URL (e.g., `http://localhost:8000/kmlcam/cockpit`)
 should work in most cases, you can change it if necessary prior to enabling the feature.
 
 - _Note: this URL value should correspond to the one used for the "Network Link" within

@@ -15,8 +15,7 @@ namespace FS2020PlanePath.XUnitTests
             persistenceRegistry = new InMemoryRegistry<LiveCamEntity>();
             liveCamRegistry = new LiveCamRegistry(
                 persistenceRegistry,
-                alias => $"default camera template for({alias})",
-                alias => $"default link template for({alias})"
+                new InMemoryRegistry<LiveCamEntity>()
             );
         }
 

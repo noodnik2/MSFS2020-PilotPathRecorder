@@ -4,7 +4,7 @@
     var query = Model.query;
 
     if (!query.ContainsKey("flightId") || !query.ContainsKey("seq")) {
-     Console.WriteLine("oops - required parameter(s) not present");
+     Console.WriteLine("error: required parameter(s) not present");
      return;
     }
 
@@ -18,24 +18,21 @@
     var flightIdLast = hackLast.Invoke(query["flightId"]);
     var seqLast = hackLast.Invoke(query["seq"]);
 
-    Console.WriteLine($"flightIdLast({flightIdLast})");
-    Console.WriteLine($"seqLast({seqLast})");
+    //Console.WriteLine($"flightIdLast({flightIdLast})");
+    //Console.WriteLine($"seqLast({seqLast})");
 
     var lastSeq = long.Parse(seqLast);
     var flightId = int.Parse(flightIdLast);
 
-    var updates = Model.getMultitrackUpdates(
-    flightId,
-    lastSeq
-    );
+    var updates = Model.getMultitrackUpdates(flightId, lastSeq);
 
     var nextSeq = (
-    updates.Length == 0
+        updates.Length == 0
       ? lastSeq
       : updates[updates.Length - 1].seq
     );
 
-    Console.WriteLine($"nextSeq({nextSeq})");
+    //Console.WriteLine($"nextSeq({nextSeq})");
 
 }
 <?xml version='1.0' encoding='UTF-8'?>
@@ -44,23 +41,15 @@
   xmlns:gx='http://www.google.com/kml/ext/2.2'
 >
   <NetworkLinkControl>
-    <linkName>Second Multicam Example: Update Camera</linkName>
+    <linkName>Birdseye Camera Update Link</linkName>
     <cookie>seq=@nextSeq&amp;flightId=@flightId</cookie>
     <Update>
-      <targetHref>http://localhost:8000/mc2.init</targetHref>
+      <targetHref>http://localhost:8000/kmlcam/birdseye</targetHref>
       <Create>
         <gx:MultiTrack targetId='pp'>
+          <altitudeMode>absolute</altitudeMode>
           <gx:Track>
-          <Model>
             <altitudeMode>absolute</altitudeMode>
-            <Orientation>
-              <heading>90</heading>
-            </Orientation>
-            <Scale><x>16</x><y>16</y><z>16</z></Scale>
-            <Link>
-              <href>http://localhost:8000/model.dae</href>
-            </Link>
-          </Model>
             @foreach (var update in updates) {
             <gx:coord>
               @update.longitude

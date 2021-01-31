@@ -6,29 +6,29 @@ using WatsonWebserver;
 namespace FS2020PlanePath
 {
 
-    public class LiveCamLinkListener : IDisposable
+    public class HttpListener : IDisposable
     {
 
         /// <exception cref="UriFormatException">malformed url</exception>
-        public static Uri ParseNetworkLink(string liveCamUrl)
+        public static Uri ParseNetworkLink(string url)
         {
-            return new Uri(liveCamUrl);
+            return new Uri(url);
         }
 
         /// <exception cref="UriFormatException">malformed url</exception>
-        public static string GetAlias(string liveCamUrl)
+        public static string GetPath(string url)
         {
-            return ParseNetworkLink(liveCamUrl).AbsolutePath.Substring(1);
+            return ParseNetworkLink(url).AbsolutePath.Substring(1);
         }
 
         public class Request
         {
             public string path;
             public Dictionary<string, string> query;
-            public Func<string> GetBody;
+            public Func<byte[]> GetBody;
         }
 
-        public LiveCamLinkListener(Uri webHostUri, Func<Request, string> pathHandler)
+        public HttpListener(Uri webHostUri, Func<Request, byte[]> pathHandler)
         {
             if (!supportedSchemes.Contains(webHostUri.Scheme)) {
                 throw new ArgumentException($"unsupported URI scheme: {webHostUri.Scheme}");
@@ -47,7 +47,7 @@ namespace FS2020PlanePath
             }
             if (!server.IsListening) {
                 server.Start();
-                Console.WriteLine($"{GetType().Name} listening at({webHostUri})");
+                Console.WriteLine($"{GetType().Name} example URL: {webHostUri}");
             }
         }
 
@@ -81,23 +81,27 @@ namespace FS2020PlanePath
         async Task RequestHandler(HttpContext context)
         {
             Console.WriteLine($"handling request({context.Request.Url.RawWithQuery})");
-            string listenerResponseBody = (
+            byte[] listenerResponseBody = (
                 pathHandler.Invoke(
                     new Request
                     {
                         path = context.Request.Url.RawWithoutQuery.Substring(1),
                         query = context.Request.Query.Elements,
-                        GetBody = () => context.Request.DataAsString()
+                        GetBody = () => context.Request.DataAsBytes()
                     }
                 )
             );
-            Console.WriteLine($"listenerResponseBody({listenerResponseBody})");
-            //Console.WriteLine($"listenerResponseBody.Length({listenerResponseBody.Length})");
+            Console.WriteLine($"listenerResponseBody({fixupForDisplay(listenerResponseBody)})");
             await context.Response.Send(listenerResponseBody);
         }
 
+        private string fixupForDisplay(byte[] listenerResponseBody)
+        {
+            return $"Length({listenerResponseBody.Length})";
+        }
+
         private readonly List<string> supportedSchemes = new List<string> { Uri.UriSchemeHttp, Uri.UriSchemeHttps };
-        private readonly Func<Request, string> pathHandler;
+        private readonly Func<Request, byte[]> pathHandler;
         private readonly Uri webHostUri;
 
         private Server server;

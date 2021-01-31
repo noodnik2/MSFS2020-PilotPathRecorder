@@ -1,10 +1,9 @@
 ﻿using Xunit;
 using Xunit.Abstractions;
 using System;
+using System.Text;
 using System.Net;
 using System.Net.Http;
-using System.Reflection;
-using System.Collections.Generic;
 
 namespace FS2020PlanePath.XUnitTests
 {
@@ -23,7 +22,7 @@ namespace FS2020PlanePath.XUnitTests
         public void TestSimpleGetPath()
         {
             Uri localUri = new Uri("http://localhost:8000/kmlcam/xyz");
-            using (LiveCamLinkListener ws = new LiveCamLinkListener(localUri, request => $"~/{request.path}/~")) {
+            using (HttpListener ws = new HttpListener(localUri, request => s2b($"~/{request.path}/~"))) {
                 ws.Enable();
                 (var status, var body) = HttpGet(localUri);
                 string testResultString = $"status({status}); responseBody({body})";
@@ -37,7 +36,7 @@ namespace FS2020PlanePath.XUnitTests
         {
             Uri localUri = new Uri("http://localhost:8000/kmlcam/xyz");
             Action clientAction = () => HttpGet(localUri);
-            using (LiveCamLinkListener ws = new LiveCamLinkListener(localUri, path => $"~/{path}/~"))
+            using (HttpListener ws = new HttpListener(localUri, path => s2b($"~/{path}/~")))
             {
                 Assert.ThrowsAny<Exception>(clientAction);  // created but not enabled; should throw exception
                 ws.Enable();
@@ -57,6 +56,11 @@ namespace FS2020PlanePath.XUnitTests
             httpClient.Timeout = TimeSpan.FromSeconds(1);
             HttpResponseMessage result = httpClient.GetAsync(uri).Result;
             return (result.StatusCode, result.Content.ReadAsStringAsync().Result);
+        }
+
+        private byte[] s2b(string s)
+        {
+            return Encoding.ASCII.GetBytes(s);
         }
 
     }

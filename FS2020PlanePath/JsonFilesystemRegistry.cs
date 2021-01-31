@@ -94,8 +94,8 @@ namespace FS2020PlanePath
                 }
                 fileCount++;
             }
-            // list of ids, most recently accessed first
-            Console.WriteLine($"retrieved({ids.Count}) ids");
+            // list of ids found in the file system, most recently accessed first
+            Console.WriteLine($"retrieved({ids.Count}) filesystem ids");
             return ids;
         }
 

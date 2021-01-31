@@ -47,6 +47,7 @@ namespace FS2020PlanePath
         public double roll { get; set; }
         public long seq { get; set; }    // update sequence
         public int flightId { get; set; }
+        public int refreshSeconds { get; set; } = 5;    // sync with "AboveThresholdWriteFreq"
         public GetMultitrackUpdatesDelegate getMultitrackUpdates { get; set; }
         public Dictionary<string, string> query { get; set; }
 

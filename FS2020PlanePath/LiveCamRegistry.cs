@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace FS2020PlanePath
 {
@@ -9,19 +8,16 @@ namespace FS2020PlanePath
 
         private IRegistry<KmlLiveCam> cacheRegistry;
         private IRegistry<LiveCamEntity> persistentRegistry;
-        private Func<string, string> defaultCameraTemplateGetter;
-        private Func<string, string> defaultLinkTemplateGetter;
+        private IRegistry<LiveCamEntity> builtinLiveCamRegistry;
 
         public LiveCamRegistry(
             IRegistry<LiveCamEntity> persistentRegistry,
-            Func<string, string> defaultCameraTemplateGetter,
-            Func<string, string> defaultLinkTemplateGetter
+            IRegistry<LiveCamEntity> builtinLiveCamRegistry
         )
         {
             cacheRegistry = new InMemoryRegistry<KmlLiveCam>();
             this.persistentRegistry = persistentRegistry;
-            this.defaultCameraTemplateGetter = defaultCameraTemplateGetter;
-            this.defaultLinkTemplateGetter = defaultLinkTemplateGetter;
+            this.builtinLiveCamRegistry = builtinLiveCamRegistry;
         }
 
         public KmlLiveCam LoadByAlias(string alias)
@@ -43,7 +39,15 @@ namespace FS2020PlanePath
             }
 
             LiveCamEntity liveCamEntity;
+
             if (persistentRegistry.TryGetById(alias, out liveCamEntity))
+            {
+                kmlLiveCam = new KmlLiveCam(liveCamEntity.CameraTemplate, liveCamEntity.LinkTemplate);
+                cacheRegistry.Save(alias, kmlLiveCam);
+                return true;
+            }
+
+            if (builtinLiveCamRegistry.TryGetById(alias, out liveCamEntity))
             {
                 kmlLiveCam = new KmlLiveCam(liveCamEntity.CameraTemplate, liveCamEntity.LinkTemplate);
                 cacheRegistry.Save(alias, kmlLiveCam);
@@ -71,25 +75,41 @@ namespace FS2020PlanePath
 
         public List<string> GetIds(int maxCount = -1)
         {
-            return persistentRegistry.GetIds(maxCount);
+            List<string> ids = new List<string>();
+            ids.AddRange(persistentRegistry.GetIds(maxCount));
+            foreach (string id in builtinLiveCamRegistry.GetIds(maxCount))
+            {
+                if (!ids.Contains(id))
+                {
+                    ids.Add(id);
+                }
+            }
+            return ids;
         }
 
         public bool IsDefaultDefinition(KmlLiveCam kmlLiveCam, string alias)
         {
+            LiveCamEntity builtinLiveCamEntity = DefaultLiveCamEntity(alias);
             return (
-                kmlLiveCam.Camera.Template == defaultCameraTemplateGetter.Invoke(alias)
-             && kmlLiveCam.Link.Template == defaultLinkTemplateGetter.Invoke(alias)
+                kmlLiveCam.Camera.Template == builtinLiveCamEntity.CameraTemplate
+             && kmlLiveCam.Link.Template == builtinLiveCamEntity.LinkTemplate
             );
         }
 
         public KmlLiveCam DefaultLiveCam(string alias)
         {
-            return(
-                new KmlLiveCam(
-                    defaultCameraTemplateGetter.Invoke(alias),
-                    defaultLinkTemplateGetter.Invoke(alias)
-                )
-            );
+            LiveCamEntity builtinLiveCamEntity = DefaultLiveCamEntity(alias);
+            return new KmlLiveCam(builtinLiveCamEntity.CameraTemplate, builtinLiveCamEntity.LinkTemplate);
+        }
+
+        private LiveCamEntity DefaultLiveCamEntity(string alias)
+        {
+            LiveCamEntity builtinLiveCamEntity;
+            if (builtinLiveCamRegistry.TryGetById(alias, out builtinLiveCamEntity))
+            {
+                return builtinLiveCamEntity;
+            }
+            return new LiveCamEntity();
         }
 
     }
