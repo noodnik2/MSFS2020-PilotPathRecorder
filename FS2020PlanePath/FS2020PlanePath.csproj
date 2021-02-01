@@ -282,9 +282,6 @@
     <EmbeddedResource Include="Resources\liveCam\models\piper_pa18t.dae">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\models\cockpit.dae">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
     <EmbeddedResource Include="Resources\liveCam\models\duck.dae">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
