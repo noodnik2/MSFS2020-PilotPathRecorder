@@ -1,0 +1,12 @@
+﻿<?xml version='1.0' encoding='UTF-8'?>
+<kml xmlns='http://www.opengis.net/kml/2.2'>
+  <NetworkLink>
+    <name>MSFS2020-PilotPathRecorder Duckseye LiveCam ({alias}) - Link</name>
+    <flyToView>1</flyToView>
+    <Link>
+      <href>{url}</href>
+      <refreshMode>onChange</refreshMode>
+      <viewRefreshMode>never</viewRefreshMode>
+    </Link>
+  </NetworkLink>
+</kml>
