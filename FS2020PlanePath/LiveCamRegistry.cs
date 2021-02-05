@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Linq;
+using System.Collections.Generic;
 
 namespace FS2020PlanePath
 {
@@ -25,7 +26,7 @@ namespace FS2020PlanePath
             KmlLiveCam kmlLiveCam;
             if (!TryGetById(alias, out kmlLiveCam))
             {
-                kmlLiveCam = DefaultLiveCam(alias);
+                kmlLiveCam = new KmlLiveCam(new LiveCamEntity());
                 Save(alias, kmlLiveCam);
             }
             return kmlLiveCam;
@@ -42,14 +43,14 @@ namespace FS2020PlanePath
 
             if (persistentRegistry.TryGetById(alias, out liveCamEntity))
             {
-                kmlLiveCam = new KmlLiveCam(liveCamEntity.CameraTemplate, liveCamEntity.LinkTemplate);
+                kmlLiveCam = new KmlLiveCam(liveCamEntity);
                 cacheRegistry.Save(alias, kmlLiveCam);
                 return true;
             }
 
             if (builtinLiveCamRegistry.TryGetById(alias, out liveCamEntity))
             {
-                kmlLiveCam = new KmlLiveCam(liveCamEntity.CameraTemplate, liveCamEntity.LinkTemplate);
+                kmlLiveCam = new KmlLiveCam(liveCamEntity);
                 cacheRegistry.Save(alias, kmlLiveCam);
                 return true;
             }
@@ -59,13 +60,19 @@ namespace FS2020PlanePath
 
         public bool Save(string alias, KmlLiveCam kmlLiveCam)
         {
-            LiveCamEntity liveCamEntity = new LiveCamEntity
-            {
-                CameraTemplate = kmlLiveCam.Camera.Template,
-                LinkTemplate = kmlLiveCam.Link.Template
-            };
             cacheRegistry.Save(alias, kmlLiveCam);
-            return persistentRegistry.Save(alias, liveCamEntity);
+            return persistentRegistry.Save(
+                alias,
+                new LiveCamEntity(
+                    kmlLiveCam.LensNames.Select(
+                        lensName => new LiveCamLensEntity(
+                            lensName,
+                            kmlLiveCam.GetLens(lensName).Template
+                        )
+                    )
+                    .ToArray()
+                )
+            );
         }
 
         public bool Delete(string alias)
@@ -89,17 +96,12 @@ namespace FS2020PlanePath
 
         public bool IsDefaultDefinition(KmlLiveCam kmlLiveCam, string alias)
         {
-            LiveCamEntity builtinLiveCamEntity = DefaultLiveCamEntity(alias);
-            return (
-                kmlLiveCam.Camera.Template == builtinLiveCamEntity.CameraTemplate
-             && kmlLiveCam.Link.Template == builtinLiveCamEntity.LinkTemplate
-            );
+            return DefaultLiveCam(alias).Equals(kmlLiveCam);
         }
 
         public KmlLiveCam DefaultLiveCam(string alias)
         {
-            LiveCamEntity builtinLiveCamEntity = DefaultLiveCamEntity(alias);
-            return new KmlLiveCam(builtinLiveCamEntity.CameraTemplate, builtinLiveCamEntity.LinkTemplate);
+            return new KmlLiveCam(DefaultLiveCamEntity(alias));
         }
 
         private LiveCamEntity DefaultLiveCamEntity(string alias)
@@ -114,10 +116,50 @@ namespace FS2020PlanePath
 
     }
 
+    public class LiveCamLensEntity
+    {
+
+        public LiveCamLensEntity(string name, string template)
+        {
+            Name = name;
+            Template = template;
+        }
+
+        public string Name {
+            get => name;
+            set {
+                name = value != null ? value : "";
+            }
+         }
+
+        public string Template {
+            get => template;
+            set {
+                template = value != null ? value : "";
+            }
+         }
+
+        private string name, template;
+
+    }
+
     public class LiveCamEntity
     {
-        public string CameraTemplate { get; set; } = "";
-        public string LinkTemplate { get; set; } = "";
+        public LiveCamEntity(params LiveCamLensEntity[] lens)
+        {
+            Lens = lens;
+        }
+
+        public LiveCamLensEntity[] Lens {
+            get => lens;
+            set
+            {
+                lens = value != null ? value : new LiveCamLensEntity[0];
+            } 
+        }
+
+        private LiveCamLensEntity[] lens;
+
     }
 
 }

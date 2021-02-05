@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using Newtonsoft.Json;
 
 namespace FS2020PlanePath
 {
@@ -10,11 +8,13 @@ namespace FS2020PlanePath
     public class JsonFilesystemRegistry<T> : IRegistry<T>
     {
 
+        private string folderNamePrefix;
         private string fileNamePrefix;
         private string fileNameSuffix;
 
-        public JsonFilesystemRegistry(string fileNamePrefix)
+        public JsonFilesystemRegistry(string folderNamePrefix, string fileNamePrefix)
         {
+            this.folderNamePrefix = folderNamePrefix;
             this.fileNamePrefix = fileNamePrefix;
             this.fileNameSuffix = ".json";
         }
@@ -24,11 +24,7 @@ namespace FS2020PlanePath
             string fileName = FilenameForId(id);
             try
             {
-                using (StreamReader file = File.OpenText(fileName))
-                {
-                    JsonSerializer serializer = new JsonSerializer();
-                    value = (T) serializer.Deserialize(file, typeof(T));
-                }
+                value = new JsonSerializer<T>().Deserialize(File.ReadAllText(fileName));
                 Console.WriteLine($"loaded({fileName})");
                 return true;
             }
@@ -45,12 +41,7 @@ namespace FS2020PlanePath
             string fileName = FilenameForId(id);
             try
             {
-                using (StreamWriter file = File.CreateText(fileName))
-                {
-                    JsonSerializer serializer = new JsonSerializer();
-                    serializer.Formatting = Formatting.Indented;
-                    serializer.Serialize(file, value);
-                }
+                File.WriteAllText(fileName, new JsonSerializer<T>().Serialize(value));
                 Console.WriteLine($"saved({fileName})");
                 return true;
             } catch(Exception ex)
@@ -108,7 +99,7 @@ namespace FS2020PlanePath
         /// <returns>filename for 'filesystemId'</returns>
         public string FilenameFor(string filesystemId)
         {
-            return $"{fileNamePrefix}{filesystemId}{fileNameSuffix}";
+            return $"{folderNamePrefix}{fileNamePrefix}{filesystemId}{fileNameSuffix}";
         }
 
     }

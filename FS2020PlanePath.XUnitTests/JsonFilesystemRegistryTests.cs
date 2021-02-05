@@ -9,7 +9,7 @@ namespace FS2020PlanePath.XUnitTests
         private JsonFilesystemRegistry<StamType> testInstance;
 
         public JsonFilesystemRegistryTests() {
-            testInstance = new JsonFilesystemRegistry<StamType>("fnpfx_");
+            testInstance = new JsonFilesystemRegistry<StamType>("", "fnpfx_");
         }
 
         [Fact]

@@ -5,7 +5,10 @@ namespace FS2020PlanePath
     public interface IRegistry<T>
     {
 
-        /// <returns>true if the value was found and loaded into the out parameter</returns>
+        /// <returns>
+        ///     true if the value was found and loaded into the out parameter
+        ///     or false if not, with 't' being set to its default value
+        /// </returns>
         bool TryGetById(string id, out T t);
 
         /// <returns>true iff the item was saved</returns>

@@ -8,12 +8,12 @@ using System.Net.Http;
 namespace FS2020PlanePath.XUnitTests
 {
 
-    public class LiveCamLinkListenerTests
+    public class HttpListenerTests
     {
 
         private readonly ITestOutputHelper logger;
 
-        public LiveCamLinkListenerTests(ITestOutputHelper logger)
+        public HttpListenerTests(ITestOutputHelper logger)
         {
             this.logger = logger;
         }

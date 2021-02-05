@@ -9,7 +9,8 @@ namespace FS2020PlanePath
         const double FEET_PER_METER = 3.28084;
 
         private KmlCameraParameterValues _kmlCameraValues;
-        public KmlCameraParameterValues KmlCameraValues { get => _kmlCameraValues; }
+
+        public KmlCameraParameterValues KmlCameraValues => _kmlCameraValues;
 
         public ScKmlAdapter(GetMultitrackUpdatesDelegate getMultitrackUpdatesDelegate)
         {

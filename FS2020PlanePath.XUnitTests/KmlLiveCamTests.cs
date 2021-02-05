@@ -19,27 +19,38 @@ namespace FS2020PlanePath.XUnitTests
         [Fact]
         public void TestCamerTemplateTextRendering()
         {
-            var kmlLiveCam = new KmlLiveCam( "<cam({seq})", "<link({alias},{url})");
+            var kmlLiveCam = new KmlLiveCam( 
+                new LiveCamEntity(
+                    new LiveCamLensEntity("camera", "<cam({seq})"),
+                    new LiveCamLensEntity("link", "<link({alias},{url})")
+                )
+            );
             KmlCameraParameterValues camValues = new KmlCameraParameterValues
             {
                 seq = 99
             };
-            KmlNetworkLinkValues linkValues = new KmlNetworkLinkValues {
+            KmlCameraParameterValues linkValues = new KmlCameraParameterValues
+            {
                 alias = "a76",
                 url = "u76"
             };
-            Assert.Equal("<cam(99)", kmlLiveCam.Camera.Render(camValues));
-            Assert.Equal("<link(a76,u76)", kmlLiveCam.Link.Render(linkValues));
+            Assert.Equal("<cam(99)", kmlLiveCam.GetLens("camera").Render(camValues));
+            Assert.Equal("<link(a76,u76)", kmlLiveCam.GetLens("link").Render(linkValues));
         }
 
         [Fact]
         public void TestCamerTemplateScriptRendering()
         {
-            var kmlLiveCam = new KmlLiveCam("return $\"seq({seq})\";", "return $\"url({url})\";");
+            var kmlLiveCam = new KmlLiveCam(
+                new LiveCamEntity(
+                    new LiveCamLensEntity("camera", "return $\"seq({seq})\";"),
+                    new LiveCamLensEntity("link", "return $\"url({url})\";")
+                )
+            );
             KmlCameraParameterValues camValues = new KmlCameraParameterValues { seq = 678 };
-            KmlNetworkLinkValues linkValues = new KmlNetworkLinkValues { url = "hey!" };
-            Assert.Equal("seq(678)", kmlLiveCam.Camera.Render(camValues));
-            Assert.Equal("url(hey!)", kmlLiveCam.Link.Render(linkValues));
+            KmlCameraParameterValues linkValues = new KmlCameraParameterValues { url = "hey!" };
+            Assert.Equal("seq(678)", kmlLiveCam.GetLens("camera").Render(camValues));
+            Assert.Equal("url(hey!)", kmlLiveCam.GetLens("link").Render(linkValues));
         }
 
         [Fact]
