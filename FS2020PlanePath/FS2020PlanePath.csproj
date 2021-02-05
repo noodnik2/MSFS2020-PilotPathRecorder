@@ -174,10 +174,6 @@
   <ItemGroup>
     <Compile Include="GeoCalcUtils.cs" />
     <Compile Include="JsonFilesystemRegistry.cs" />
-    <Compile Include="LensEditorTabPage.cs" />
-    <Compile Include="LensEditorTabPage.Designer.cs">
-      <DependentUpon>LensEditorTabPage.cs</DependentUpon>
-    </Compile>
     <Compile Include="LiveCamRegistry.cs" />
     <Compile Include="FolderSelectDialog.cs" />
     <Compile Include="FS2020_SQLLiteDB.cs" />
@@ -206,10 +202,6 @@
     </Compile>
     <Compile Include="SerializationUtils.cs" />
     <Compile Include="TemplateRenderers.cs" />
-    <Compile Include="TextEditorForm.cs" />
-    <Compile Include="TextEditorForm.Designer.cs">
-      <DependentUpon>TextEditorForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="UserDialogUtils.cs" />
     <EmbeddedResource Include="MainPage.resx">
       <DependentUpon>MainPage.cs</DependentUpon>
@@ -228,10 +220,6 @@
       <DependentUpon>KmlLiveCamEditorForm.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="TextEditorForm.resx">
-      <DependentUpon>TextEditorForm.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
     <None Include="app.manifest" />
     <None Include="FS2020PlanePath_TemporaryKey.pfx" />
     <None Include="packages.config" />
@@ -244,58 +232,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <EmbeddedResource Include="Resources\liveCam\models\model.dae">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\mc2.init-camera">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\mc2.init-link">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\mc2.update-camera">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\mc3.init-camera">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\mc3.init-link">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\mc3.update-camera">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\birdseye-camera">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\birdseye-link">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\birdseye.update-camera">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\cockpit-camera">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\cockpit-link">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\models\piper_pa18.dae">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\models\piper_pa18t.dae">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
     <EmbeddedResource Include="Resources\liveCam\models\duck.dae">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\duckseye-camera">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\duckseye-link">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\duckseye.update-camera">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\liveCam\models\duckCM.tga">
@@ -328,42 +265,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="icon.ico" />
-    <EmbeddedResource Include="Resources\liveCam\defaults\kmlcam-camera">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\kmlcam-link">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\mc.init-camera">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\mc.init-link">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\mc.update-camera">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\defaults\mc.update-link">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\models\model\Metal_Aluminum_Anodized.jpg">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\models\model\texture.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\models\model\texture_0.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\models\piper_bump.jpg">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\models\piper_diffuse.jpg">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Resources\liveCam\models\piper_refl.jpg">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
     <Content Include="SimConnect.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

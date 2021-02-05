@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
+using System.Xml.Linq;
 
 namespace FS2020PlanePath
 {
@@ -13,7 +14,7 @@ namespace FS2020PlanePath
         private string[] lensNames;
 
         public static TemplateRendererFactory TemplateRendererFactory { get; } = new TemplateRendererFactory(
-            (message, details) => $"<rendererError message='{message}' details='{details}' />"
+            (message, details) => $"<rendererError message='{xas(message)}' details='{xas(details)}' />"
         );
 
         public KmlLiveCam(LiveCamEntity liveCamEntity)
@@ -79,6 +80,12 @@ namespace FS2020PlanePath
             hashCode = hashCode * -1521134295 + EqualityComparer<IDictionary<string, IStringTemplateRenderer<KmlCameraParameterValues>>>.Default.GetHashCode(lensRenderers);
             hashCode = hashCode * -1521134295 + EqualityComparer<string[]>.Default.GetHashCode(lensNames);
             return hashCode;
+        }
+
+        /// <returns>XML encoded attribute string representation of 'plainString'</returns>
+        private static string xas(string plainString)
+        {
+            return new XElement("t", plainString).LastNode.ToString();
         }
 
     }
