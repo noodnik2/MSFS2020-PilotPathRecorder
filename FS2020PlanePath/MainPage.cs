@@ -107,9 +107,13 @@ namespace FS2020PlanePath
         public KmlCameraParameterValues[] getKmlCameraUpdates(int flightId, long seqSince)
         {
             Console.WriteLine($"looking for camera updates({flightId}, {seqSince})");
-            // TODO: restore - generate random walk for testing purposes
-            //List<FlightPathData> flightPaths = FlightPathDB.GetLiveCamTrackSinceDateTimestamp(flightId, seqSince);
-            List<FlightPathData> flightPaths = GetLiveCamTrackSinceDateTimestamp(flightId, seqSince);
+            // use sim data if we're in an actual flight and logging;
+            // otherwise use our fake dataset (useful for testing)
+            List<FlightPathData> flightPaths = (
+                (bLoggingEnabled && nCurrentFlightID != 0)
+              ? FlightPathDB.GetLiveCamTrackSinceDateTimestamp(flightId, seqSince)
+              : GetLiveCamTrackSinceDateTimestamp(flightId, seqSince)
+            );
             KmlCameraParameterValues[] kmlCameraParameterValues = new KmlCameraParameterValues[flightPaths.Count];
             int cameraIndex = 0;
             foreach (var fp in flightPaths)
