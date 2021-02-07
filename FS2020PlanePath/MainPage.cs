@@ -54,7 +54,7 @@ namespace FS2020PlanePath
        private List<FlightPathData> GetLiveCamTrackSinceDateTimestamp(int pk, long earliestTimestamp)
         {
             List<FlightPathData> samples = new List<FlightPathData>();
-            long ticksPerSample = System.TimeSpan.TicksPerSecond / 5;
+            long ticksPerSample = System.TimeSpan.TicksPerSecond / 2;
             Random random = new Random();
 
             for (
@@ -68,13 +68,13 @@ namespace FS2020PlanePath
                 double distancePerTick = distancePerHr / (3600 * System.TimeSpan.TicksPerSecond);
                 double distancePerSample = distancePerTick * ticksPerSample;
 
-                double bearing = GeoCalcUtils.normalizeCompassCoordinate(
+                double bearing = GeoCalcUtils.rationalizedCompassDirection(
                     currentSample.plane_heading_true + 5 * (random.NextDouble() - 0.5)
                 );
 
                 (double lat, double lon) to = GeoCalcUtils.calcLatLonOffset(
-                    GeoCalcUtils.normalizeIso6709Coordinate(currentSample.latitude),
-                    GeoCalcUtils.normalizeIso6709Coordinate(currentSample.longitude),
+                    GeoCalcUtils.normalizedIso6709GeoDirection(currentSample.latitude),
+                    GeoCalcUtils.normalizedIso6709GeoDirection(currentSample.longitude),
                     bearing,
                     distancePerSample
                 );
@@ -107,6 +107,7 @@ namespace FS2020PlanePath
         public KmlCameraParameterValues[] getKmlCameraUpdates(int flightId, long seqSince)
         {
             Console.WriteLine($"looking for camera updates({flightId}, {seqSince})");
+
             // use sim data if we're in an actual flight and logging;
             // otherwise use our fake dataset (useful for testing)
             List<FlightPathData> flightPaths = (
@@ -114,23 +115,23 @@ namespace FS2020PlanePath
               ? FlightPathDB.GetLiveCamTrackSinceDateTimestamp(flightId, seqSince)
               : GetLiveCamTrackSinceDateTimestamp(flightId, seqSince)
             );
-            KmlCameraParameterValues[] kmlCameraParameterValues = new KmlCameraParameterValues[flightPaths.Count];
+
+            KmlCameraParameterValues[] kmlCameraUpdates = new KmlCameraParameterValues[flightPaths.Count];
             int cameraIndex = 0;
             foreach (var fp in flightPaths)
             {
-                kmlCameraParameterValues[cameraIndex++] = new KmlCameraParameterValues
-                {
-                    seq = fp.timestamp,
-                    altitude = fp.altitude,
-                    longitude = fp.longitude,
-                    latitude = fp.latitude,
-                    tilt = fp.plane_pitch,
-                    roll = fp.plane_bank,
-                    heading = fp.plane_heading_true
-                };
+                KmlCameraParameterValues newCameraParameterValues = scKmlAdapter.KmlCameraValues.ShallowCopy();
+                newCameraParameterValues.seq = fp.timestamp;
+                newCameraParameterValues.altitude = fp.altitude;
+                newCameraParameterValues.longitude = fp.longitude;
+                newCameraParameterValues.latitude = fp.latitude;
+                newCameraParameterValues.tilt = fp.plane_pitch;
+                newCameraParameterValues.roll = fp.plane_bank;
+                newCameraParameterValues.heading = fp.plane_heading_true;
+                kmlCameraUpdates[cameraIndex++] = newCameraParameterValues;
             }
 
-            return kmlCameraParameterValues;
+            return kmlCameraUpdates;
         }
 
 
@@ -166,7 +167,13 @@ namespace FS2020PlanePath
 
             LoadFlightList();
             LoadLiveCams();
-            scKmlAdapter = new ScKmlAdapter(new GetMultitrackUpdatesDelegate(getKmlCameraUpdates));
+
+            KmlCameraParameterValues kmlCameraParameterValues = new KmlCameraParameterValues();
+            kmlCameraParameterValues.listenerUrl = LiveCamServer.LiveCamUrl();
+            kmlCameraParameterValues.liveCamUriPath = LiveCamServer.LIVECAM_URLPATH_SEGMENTS;
+            kmlCameraParameterValues.getMultitrackUpdates = getKmlCameraUpdates;
+
+            scKmlAdapter = new ScKmlAdapter(kmlCameraParameterValues);
             liveCamServer = new LiveCamServer(scKmlAdapter, liveCamRegistry);
 
         }
@@ -899,7 +906,7 @@ namespace FS2020PlanePath
             string liveCamUrl = LiveCameraHostPortCB.Text;
             try
             {
-                hostUri = HttpListener.ParseNetworkLink(liveCamUrl);
+                hostUri = new Uri(liveCamUrl);
                 // ensure live cam is registered
                 liveCamRegistry.LoadByAlias(LiveCamServer.LiveCamUrlToLensSpec(liveCamUrl).alias);
             }
@@ -913,7 +920,9 @@ namespace FS2020PlanePath
                 try
                 {
                     liveCamServer.Start(hostUri);
-                } catch(SystemException ene)
+                    scKmlAdapter.KmlCameraValues.listenerUrl = hostUri.GetLeftPart(UriPartial.Authority);
+                }
+                catch (SystemException ene)
                 {
                     problemMessage = $"Could not listen on: {hostUri}.\n\nDetails: {ene.Message}";
                 }
@@ -988,18 +997,14 @@ namespace FS2020PlanePath
             );
             string linkFileName = Path.GetTempPath() + $"FS2020PlanePath-kmllink-{liveCamAliasQualifier}.kml";
             IStringTemplateRenderer<KmlCameraParameterValues> stringTemplateRenderer = liveCam.GetLens(lensName);
+            KmlCameraParameterValues linkKmlCameraParameterValues = scKmlAdapter.KmlCameraValues.ShallowCopy();
+            linkKmlCameraParameterValues.alias = alias;
+            linkKmlCameraParameterValues.lens = lensName;
             try
             {
                 File.WriteAllText(
                     linkFileName,
-                    stringTemplateRenderer.Render(
-                        new KmlCameraParameterValues
-                        {
-                            alias = alias,
-                            lens = lensName,
-                            url = liveCamUrl
-                        }
-                    )
+                    stringTemplateRenderer.Render(linkKmlCameraParameterValues)
                 );
             }
             catch (Exception ex)
@@ -1040,7 +1045,7 @@ namespace FS2020PlanePath
             string liveCamUrl = LiveCameraHostPortCB.Text;
             try
             {
-                HttpListener.ParseNetworkLink(liveCamUrl);
+                new Uri(liveCamUrl);
             } catch(UriFormatException ufe)
             {
                 UserDialogUtils.displayError("Invalid Network Link", malformedUriErrorMessage(liveCamUrl, ufe));

@@ -184,7 +184,6 @@ namespace FS2020PlanePath
     {
 
         private string kmlTemplate;
-        private TemplateRendererErrorHandler rendererErrorHandler;
 
         public KmlTemplateRenderer(string kmlTemplate, TemplateRendererErrorHandler rendererErrorHandler)
         {

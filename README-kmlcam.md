@@ -32,26 +32,30 @@ Here's an example of what it might look like right after being activated:
 
 ![MSFS2020-PilotPathRecorder - "Live Camera Listener Started"](docs/images/PPRv13n2lcls.jpg)
 
-The link URL(s) of the currently defined LiveCams can be seen by opening the "Network Link" combo box,
+The link URL(s) of available LiveCams can be seen by opening the "Network Link" combo box,
 located just to the right of the check box.
 
 #### Anatomy of a Network Link URL
 
-The format of a LiveCam Network Link URL is:
+The following notations are used to reference the various URLs associated with LiveCams:
 
-- `http://`**_listener_**`/kmlcam/`[**_liveCamAlias_**[`/`**_lensName_**[`/`]]]
+- _\{listenerUrl\}_ - the base URL endpoint exposed by the internal web server
+  - the default is `http://localhost:8000`, but can be changed in the dialog, if needed
+- _\{liveCamUrl\}_ - the same as _\{listenerUrl\}_`/kmlcam`
+- _\{aliasUrl\}_ - the same as _\{liveCamUrl\}_`/`_\{alias\}_
+- _\{lensUrl\}_ - the same as _\{aliasUrl\}_`/`_\{lens\}_
+- _\{query\}_ - the set of URL "query" parameters associated with any of the above 
 
 Where:
-- **_listener_** is configured out of the box to be `localhost:8000`, and specifies the "network address"
-  used to listen for callback requests from Google Earth.  It can be changed, if neeeded.
-- **_liveCamAlias_** is the name of the LiveCam; if not specified, it's the empty string (i.e., "")
-- **_lensName_** references a specific KML generator for the LiveCam; if not specified, it's the empty string.
-  A LiveCam may use one or more "Lenses" in order to accomplish its goals.
+- _\{alias\}_ is the name of the LiveCam; if not specified, it's the empty string (i.e., "")
+- _\{lens\}_ names a specific KML generator for the LiveCam; if not specified, it's the
+  empty string.  A LiveCam may use one or more "Lenses" in order to accomplish its goals.
 
 Notes:
-- The "Lens" whose name is the empty string will be delivered to Google Earth when the `Link` button
-  (to the right of the combo box) is pressed.  This "link Lens" typically generates the initial Network
-  Link KML, and is used as the way to install or activate a LiveCam within Google Earth.
+- The "Lens" whose name is the empty string will be delivered to Google Earth when
+  the `Link` button (to the right of the combo box) is pressed.  This "link Lens"
+  typically generates the initial Network Link KML, and is used as the way to install
+  or activate a LiveCam within Google Earth.
 
 #### Default And Customized LiveCams
 

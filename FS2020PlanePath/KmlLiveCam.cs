@@ -85,7 +85,7 @@ namespace FS2020PlanePath
         /// <returns>XML encoded attribute string representation of 'plainString'</returns>
         private static string xas(string plainString)
         {
-            return new XElement("t", plainString).LastNode.ToString();
+            return System.Security.SecurityElement.Escape(plainString);
         }
 
     }
@@ -97,8 +97,9 @@ namespace FS2020PlanePath
     //  - https://developers.google.com/kml/documentation/kmlreference#camera
     //  - https://developers.google.com/kml/documentation/kmlreference#networklink
     //
-    public class KmlCameraParameterValues
+    public class KmlCameraParameterValues : ICloneable
     {
+
         public double longitude { get; set; }
         public double latitude { get; set; }
         public double altitude { get; set; }    // meters
@@ -108,11 +109,35 @@ namespace FS2020PlanePath
         public long seq { get; set; }    // update sequence
         public int flightId { get; set; }
         public int refreshSeconds { get; set; } = 5;    // sync with "AboveThresholdWriteFreq"
-        public string url { get; set; }
         public string alias { get; set; }
         public string lens { get; set; }
-        public GetMultitrackUpdatesDelegate getMultitrackUpdates { get; set; }
         public Dictionary<string, string> query { get; set; }
+        public string listenerUrl { get; set; }    // base URL of the internal webserver
+        public string liveCamUriPath { get; set; }
+        public string liveCamUrl => $"{listenerUrl}/{liveCamUriPath}";
+        public string aliasUrl => $"{liveCamUrl}/{alias}";
+        public string lensUrl => $"{aliasUrl}/{lens}";
+
+        // prevent Newtonsoft serialization of the corresponding method
+        public bool ShouldSerializegetMultitrackUpdates() => false;
+        public GetMultitrackUpdatesDelegate getMultitrackUpdates { get; set; }
+
+        public KmlCameraParameterValues ShallowCopy()
+        {
+            return (KmlCameraParameterValues) MemberwiseClone();
+        }
+
+        public KmlCameraParameterValues DeepCopy()
+        {
+            KmlCameraParameterValues kmlCameraParameterValues = ShallowCopy();
+            kmlCameraParameterValues.query = new Dictionary<string, string>(query);
+            return kmlCameraParameterValues;
+        }
+
+        public object Clone()
+        {
+            return MemberwiseClone();
+        }
 
     }
 

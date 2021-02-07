@@ -247,6 +247,12 @@
     <EmbeddedResource Include="Resources\liveCam\defaults\LiveCamEntity_birdseye.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="Resources\liveCam\models\cessna.dae">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\liveCam\defaults\LiveCamEntity_tagalong.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

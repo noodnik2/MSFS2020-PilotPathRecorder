@@ -10,17 +10,25 @@ namespace FS2020PlanePath
     public class LiveCamServer
     {
 
+        public const string DEFAULT_SERVER_URL = "http://localhost:8000";
+        public const string LIVECAM_URLPATH_SEGMENTS = "kmlcam";
+        public const string EVAL_TEMPLATE_URLPATH = "eval/template";
+        public const string EVAL_MODELVALUES_URLPATH = "eval/Model.values";
+
+        public readonly static string LIVECAM_URLPATH_PREFIX = $"{LIVECAM_URLPATH_SEGMENTS}/";
+        public readonly static char[] URI_SEPARATOR_CHARS = { '/' };
+
         /// <param name="liveCamLensPath">URL path to a liveCam lens</param>
         /// <returns>spec of the liveCam lens referenced by 'liveCamLensPath'</returns>
         /// <exception cref="UriFormatException">invalid liveCam path</exception>
         public static (string alias, string lensName) LiveCamPathToLensSpec(string liveCamLensPath)
         {
-            if (!liveCamLensPath.StartsWith(liveCamUrlPathPrefix))
+            if (!liveCamLensPath.StartsWith(LIVECAM_URLPATH_PREFIX))
             {
                 throw new UriFormatException($"invalid liveCamLensPath({liveCamLensPath})");
             }
 
-            string liveCamSpec = liveCamLensPath.Remove(0, liveCamUrlPathPrefix.Length);
+            string liveCamSpec = liveCamLensPath.Remove(0, LIVECAM_URLPATH_PREFIX.Length);
             string[] specParts = liveCamSpec.Split(new char[] { '/' }, 2);
             return (specParts[0], specParts.Length < 2 ? "" : specParts[1]);
         }
@@ -30,7 +38,7 @@ namespace FS2020PlanePath
         /// <exception cref="UriFormatException">invalid liveCam URL</exception>
         public static (string alias, string lensName) LiveCamUrlToLensSpec(string liveCamUrl)
         {
-            return LiveCamPathToLensSpec(HttpListener.GetPath(liveCamUrl));
+            return LiveCamPathToLensSpec(new Uri(liveCamUrl).AbsolutePath.Substring(1));
         }
 
         /// <param name="alias">liveCam identifier</param>
@@ -38,15 +46,18 @@ namespace FS2020PlanePath
         /// <returns>URL link to the liveCam lens identified by 'alias' and 'lensName'</returns>
         public static string LiveCamLensSpecToUrl(string alias, string lensName)
         {
-            //return $"{urlPrefix}{liveCamUrlPathPrefix}{alias}{lensName}";
-            return FlattenUriComponents(urlPrefix, liveCamUrlPathPrefix, alias, lensName);
+            return FlattenUriComponents(DEFAULT_SERVER_URL, LIVECAM_URLPATH_SEGMENTS, alias, lensName);
+        }
+
+        public static string LiveCamUrl(params string[] urlComponents)
+        {
+            return FlattenUriComponents(urlComponents.Prepend(DEFAULT_SERVER_URL).ToArray());
         }
 
         public static string FlattenUriComponents(params string[] uriParts)
         {
-            char[] uriSeparatorChars = new char[] { '/' };
             return uriParts.Aggregate<string>(
-                (l, r) => $"{l.TrimEnd(uriSeparatorChars)}/{r.TrimStart(uriSeparatorChars)}"
+                (l, r) => $"{l.TrimEnd(URI_SEPARATOR_CHARS)}/{r.TrimStart(URI_SEPARATOR_CHARS)}"
             );
         }
 
@@ -67,7 +78,7 @@ namespace FS2020PlanePath
             routingTable.Add(
                 new Route
                 {
-                    IsSupported = request => request.path.StartsWith(liveCamUrlPathPrefix),
+                    IsSupported = request => request.path.StartsWith(LIVECAM_URLPATH_PREFIX),
                     Handler = request => handleLiveCamRequest(request)
                 }
             );
@@ -75,8 +86,16 @@ namespace FS2020PlanePath
             routingTable.Add(
                 new Route
                 {
-                    IsSupported = request => request.path.StartsWith(evalTemplatePathPrefix),
-                    Handler = request => handleInternalRequest(request)
+                    IsSupported = request => request.path.TrimEnd(URI_SEPARATOR_CHARS) == EVAL_TEMPLATE_URLPATH,
+                    Handler = request => handleEvalTemplateRequest(request)
+                }
+            );
+            // route (intended to be diagnostic / development) evaluate context requests
+            routingTable.Add(
+                new Route
+                {
+                    IsSupported = request => request.path.TrimEnd(URI_SEPARATOR_CHARS) == EVAL_MODELVALUES_URLPATH,
+                    Handler = request => handleEvalContextRequest(request)
                 }
             );
             // route all other requests (just return specified resource)
@@ -163,22 +182,40 @@ namespace FS2020PlanePath
                 scKmlAdapter.KmlCameraValues.query = request.query;
                 scKmlAdapter.KmlCameraValues.alias = alias;
                 scKmlAdapter.KmlCameraValues.lens = lensName;
-                scKmlAdapter.KmlCameraValues.url = LiveCamLensSpecToUrl(alias, lensName);
                 return s2b(liveCam.GetLens(lensName).Render(scKmlAdapter.KmlCameraValues));
             }
 
             return s2b(KmlLiveCam.TemplateRendererFactory.rendererErrorHandler("request ignored", $"LiveCam({alias}) not found"));
         }
 
-        private byte[] handleInternalRequest(HttpListener.Request request)
+        private byte[] handleEvalTemplateRequest(HttpListener.Request request)
         {
-            Console.WriteLine($"handling internal request({request.path})");
+            Console.WriteLine($"handling evalTemplate request({request.path})");
             scKmlAdapter.KmlCameraValues.query = request.query;
             string template = Encoding.UTF8.GetString(request.GetBody());
-            return s2b(
-                KmlLiveCam.TemplateRendererFactory.newTemplateRenderer<KmlCameraParameterValues>(template)
-                .Render(scKmlAdapter.KmlCameraValues)
-            );
+            string result;
+            try
+            {
+                result = (
+                    KmlLiveCam.TemplateRendererFactory.newTemplateRenderer<KmlCameraParameterValues>(template)
+                    .Render(scKmlAdapter.KmlCameraValues)
+                );
+            } catch(Exception ex)
+            {
+                result = (
+                    KmlLiveCam.TemplateRendererFactory.rendererErrorHandler(
+                        $"exception encountered while evaluating template",
+                        ex.Message
+                    )
+                );
+            }
+            return s2b(result);
+        }
+        private byte[] handleEvalContextRequest(HttpListener.Request request)
+        {
+            Console.WriteLine($"handling evalContext request({request.path})");
+            string serialized = new JsonSerializer<KmlCameraParameterValues>().Serialize(scKmlAdapter.KmlCameraValues);
+            return s2b(serialized);
         }
 
         private byte[] handleResourceRequest(HttpListener.Request request)
@@ -206,10 +243,6 @@ namespace FS2020PlanePath
             public Func<HttpListener.Request, bool> IsSupported;
             public Func<HttpListener.Request, byte[]> Handler;
         }
-
-        private const string urlPrefix = "http://localhost:8000/";
-        private const string liveCamUrlPathPrefix = "kmlcam/";
-        private const string evalTemplatePathPrefix = "eval/template/";
 
         private ScKmlAdapter scKmlAdapter;
         private LiveCamRegistry liveCamRegistry;

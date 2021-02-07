@@ -31,8 +31,7 @@ namespace FS2020PlanePath.XUnitTests
             };
             KmlCameraParameterValues linkValues = new KmlCameraParameterValues
             {
-                alias = "a76",
-                url = "u76"
+                alias = "a76"
             };
             Assert.Equal("<cam(99)", kmlLiveCam.GetLens("camera").Render(camValues));
             Assert.Equal("<link(a76,u76)", kmlLiveCam.GetLens("link").Render(linkValues));
@@ -48,7 +47,7 @@ namespace FS2020PlanePath.XUnitTests
                 )
             );
             KmlCameraParameterValues camValues = new KmlCameraParameterValues { seq = 678 };
-            KmlCameraParameterValues linkValues = new KmlCameraParameterValues { url = "hey!" };
+            KmlCameraParameterValues linkValues = new KmlCameraParameterValues { listenerUrl = "hey!" };
             Assert.Equal("seq(678)", kmlLiveCam.GetLens("camera").Render(camValues));
             Assert.Equal("url(hey!)", kmlLiveCam.GetLens("link").Render(linkValues));
         }

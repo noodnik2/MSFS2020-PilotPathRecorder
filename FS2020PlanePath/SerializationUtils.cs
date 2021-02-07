@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using Newtonsoft.Json;
 
 namespace FS2020PlanePath
@@ -19,7 +20,15 @@ namespace FS2020PlanePath
             {
                 JsonSerializer serializer = new JsonSerializer();
                 serializer.Formatting = Formatting.Indented;
-                serializer.Serialize(stringWriter, v);
+                try
+                {
+                    serializer.Serialize(stringWriter, v);
+                } catch(Exception e)
+                {
+                    // trying to serialize methods or other bad things?
+                    // see: https://www.newtonsoft.com/json/help/html/ConditionalProperties.htm
+                    Console.WriteLine($"ERROR: caught({e.Message})");
+                }
                 return stringWriter.ToString();
             }
         }

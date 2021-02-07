@@ -11,7 +11,7 @@ namespace FS2020PlanePath.XUnitTests
         public ScKmlAdapterTests()
         {
             simPlaneDataStructure = new MSFS2020_SimConnectIntergration.SimPlaneDataStructure();
-            scKmlAdapter = new ScKmlAdapter((flightId, seq) => new KmlCameraParameterValues[0]);
+            scKmlAdapter = new ScKmlAdapter(new KmlCameraParameterValues());
         }
 
         [Fact]

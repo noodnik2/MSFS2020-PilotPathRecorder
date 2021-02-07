@@ -9,18 +9,6 @@ namespace FS2020PlanePath
     public class HttpListener : IDisposable
     {
 
-        /// <exception cref="UriFormatException">malformed url</exception>
-        public static Uri ParseNetworkLink(string url)
-        {
-            return new Uri(url);
-        }
-
-        /// <exception cref="UriFormatException">malformed url</exception>
-        public static string GetPath(string url)
-        {
-            return ParseNetworkLink(url).AbsolutePath.Substring(1);
-        }
-
         public class Request
         {
             public string path;

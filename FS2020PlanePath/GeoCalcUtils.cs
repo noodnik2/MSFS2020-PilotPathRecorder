@@ -34,14 +34,18 @@ namespace FS2020PlanePath
             return (radiansToDegrees(lat2Rad), radiansToDegrees(lon2Rad));
         }
 
-        public static double normalizeIso6709Coordinate(double iso6709Coordinate)
+        /// <param name="iso6709Coordinate">"ISO 6709-like" latitude or longitude coordinate, ranging from -180 <= x < +180</param>
+        /// <returns>normalized coordinate, ranging from 0 <= x < 360</returns>
+        public static double normalizedIso6709GeoDirection(double iso6709Coordinate)
         {
-            return normalizeGeoCoordinate(iso6709Coordinate, 180);
+            return rationalizedAngleDegrees(iso6709Coordinate, 180);
         }
 
-        public static double normalizeCompassCoordinate(double compassCoordinate)
+        /// <param name="compassCoordinate">"Compass-like" direction resulting from transformations</param>
+        /// <returns>rationalized Compass coordinate, ranging from 0 <= x < 360</returns>
+        public static double rationalizedCompassDirection(double compassCoordinate)
         {
-            return normalizeGeoCoordinate(compassCoordinate, 360);
+            return rationalizedAngleDegrees(compassCoordinate, 360);
         }
 
         public static string pcoord((double lat, double lon) coord)
@@ -59,7 +63,9 @@ namespace FS2020PlanePath
             return radians / PI * 180;
         }
 
-        private static double normalizeGeoCoordinate(double coordinate, double limit)
+        /// <param name="compassCoordinate">Angle in degree units, possibly resulting from transformations</param>
+        /// <returns>rationalized angle degrees, ranging from 0 <= x < 360</returns>
+        private static double rationalizedAngleDegrees(double coordinate, double limit)
         {
             double normalizedCoordinate = coordinate;
             while (normalizedCoordinate < -Math.Abs(limit))

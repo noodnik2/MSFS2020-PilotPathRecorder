@@ -272,7 +272,7 @@ See: https://developers.google.com/kml/documentation/kmlreference"
 
         private string lensTabTextToLensName(string lensTabText)
         {
-            return lensTabText.Remove(0, 1);
+            return lensTabText.Substring(1);
         }
 
         private string lensNameToLensTabText(string lensName)
