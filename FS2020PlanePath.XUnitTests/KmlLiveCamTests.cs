@@ -22,7 +22,7 @@ namespace FS2020PlanePath.XUnitTests
             var kmlLiveCam = new KmlLiveCam( 
                 new LiveCamEntity(
                     new LiveCamLensEntity("camera", "<cam({seq})"),
-                    new LiveCamLensEntity("link", "<link({alias},{url})")
+                    new LiveCamLensEntity("link", "<link({alias},{lensUrl})")
                 )
             );
             KmlCameraParameterValues camValues = new KmlCameraParameterValues
@@ -31,10 +31,11 @@ namespace FS2020PlanePath.XUnitTests
             };
             KmlCameraParameterValues linkValues = new KmlCameraParameterValues
             {
+                liveCamUriPath = "lcp",
                 alias = "a76"
             };
             Assert.Equal("<cam(99)", kmlLiveCam.GetLens("camera").Render(camValues));
-            Assert.Equal("<link(a76,u76)", kmlLiveCam.GetLens("link").Render(linkValues));
+            Assert.Equal("<link(a76,/lcp/a76/)", kmlLiveCam.GetLens("link").Render(linkValues));
         }
 
         [Fact]
@@ -43,13 +44,13 @@ namespace FS2020PlanePath.XUnitTests
             var kmlLiveCam = new KmlLiveCam(
                 new LiveCamEntity(
                     new LiveCamLensEntity("camera", "return $\"seq({seq})\";"),
-                    new LiveCamLensEntity("link", "return $\"url({url})\";")
+                    new LiveCamLensEntity("link", "return $\"lensUrl({lensUrl})\";")
                 )
             );
             KmlCameraParameterValues camValues = new KmlCameraParameterValues { seq = 678 };
-            KmlCameraParameterValues linkValues = new KmlCameraParameterValues { listenerUrl = "hey!" };
+            KmlCameraParameterValues linkValues = new KmlCameraParameterValues { listenerUrl = "hey!", alias = "a", lens = "l" };
             Assert.Equal("seq(678)", kmlLiveCam.GetLens("camera").Render(camValues));
-            Assert.Equal("url(hey!)", kmlLiveCam.GetLens("link").Render(linkValues));
+            Assert.Equal("lensUrl(hey!//a/l)", kmlLiveCam.GetLens("link").Render(linkValues));
         }
 
         [Fact]

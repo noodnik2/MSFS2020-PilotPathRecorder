@@ -894,9 +894,7 @@ namespace FS2020PlanePath
 
             if (!LiveCameraCB.Checked)
             {
-                // re-enable the user to change the live camera's URI
-                LiveCameraHostPortCB.Enabled = true;
-                UserDialogUtils.displayMessage("Live Camera Disabled", "No longer listening.");
+                ErrorTBRO.Text = "NOTE: Live Camera Listener Deactivated";
                 return;
             }
 
@@ -937,9 +935,7 @@ namespace FS2020PlanePath
                 return;
             }
 
-            // prevent modification of the live camera's URI while it's active
-            LiveCameraHostPortCB.Enabled = false;
-            UserDialogUtils.displayMessage("Live Camera Enabled", "Example URL:\n" + hostUri);
+            ErrorTBRO.Text = "NOTE: Live Camera Listener Activated"; 
         }
 
         private void LiveCameraKml_Click(object sender, EventArgs e)
