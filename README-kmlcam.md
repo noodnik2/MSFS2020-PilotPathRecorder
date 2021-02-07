@@ -2,11 +2,12 @@
 
 ## Description
 
-A metaphor of a "Live Camera" (LiveCam) is used to describe a feature enabling real-time display
+A metaphor of a "Live Camera" (aka LiveCam) is used to describe a feature enabling real-time display
 in Google Earth of a simulated flight.  Read below for details about this feature.
 
 You can configure a [KML Network Link] to periodically "call back" to MSFS2020-PilotPathRecorder in order
-to synchronize Google Earth's view with the simulator's view, in "real-time", using a [KML Camera].
+to synchronize Google Earth's view with the simulator's view, in "real-time", using a [KML Camera]
+or other KML markup.
 
 In addition to using and/or extending the built-in LiveCams, it's possible to create your own using a
 specialized, provided editor to define "Lens" (another metaphor) templates used to periodically generate
@@ -37,18 +38,19 @@ located just to the right of the check box.
 
 #### Anatomy of a Network Link URL
 
-The following notations are used to reference the various URLs associated with LiveCams:
+The following notations are used to reference the various types of URLs associated with
+LiveCams:
 
-- _\{listenerUrl\}_ - the base URL endpoint exposed by the internal web server
-  - the default is `http://localhost:8000`, but can be changed in the dialog, if needed
-- _\{liveCamUrl\}_ - the same as _\{listenerUrl\}_`/kmlcam`
-- _\{aliasUrl\}_ - the same as _\{liveCamUrl\}_`/`_\{alias\}_
-- _\{lensUrl\}_ - the same as _\{aliasUrl\}_`/`_\{lens\}_
-- _\{query\}_ - the set of URL "query" parameters associated with any of the above 
+- ***\{listenerUrl\}*** - the base URL endpoint exposed by the internal web server
+  - the default is **`http://localhost:8000`**, but can be changed in the dialog, if needed
+- ***\{liveCamUrl\}*** - the same as ***\{listenerUrl\}*****`/kmlcam`**
+- ***\{aliasUrl\}*** - the same as ***\{liveCamUrl\}*****`/`*****\{alias\}***
+- ***\{lensUrl\}*** - the same as ***\{aliasUrl\}*****`/`*****\{lens\}***
+- ***\{query\}*** - the set of URL "query" parameters associated with any of the above 
 
 Where:
-- _\{alias\}_ is the name of the LiveCam; if not specified, it's the empty string (i.e., "")
-- _\{lens\}_ names a specific KML generator for the LiveCam; if not specified, it's the
+- ***\{alias\}*** is the name of the LiveCam; if not specified, it's the empty string (i.e., "")
+- ***\{lens\}*** names a specific KML generator for the LiveCam; if not specified, it's the
   empty string.  A LiveCam may use one or more "Lenses" in order to accomplish its goals.
 
 Notes:
@@ -68,8 +70,8 @@ you might see (with added highlighting of substitution tokens):
 Each tab corresponds to a "Lens Template" used to generate the needed KML to be delivered to Google Earth
 (tabs are named with a slash followed by the name of the Lens).  Lens templates reference one-another
 through KML Network Link URLs they emit, as needed to accomplish their desired effect.  For example,
-in the example template shown above, see how the "/" (initial) template references the "/camera"
-Lens template, which is then called periodically by Google Earth.
+in the example template shown above, see how the `/` (initial link) template references the `/camera`
+Lens template, which is then called periodically by Google Earth, according to `refreshMode`.
 
 The set of values describing the real-time state of the simulated flight (such as airplane position,
 heading, speed, bank angle, etc.) can be referenced by templates, albeit a bit differently depending
