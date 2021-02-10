@@ -18,7 +18,7 @@ namespace FS2020PlanePath
         }
 
         public void Update(
-            MSFS2020_SimConnectIntergration.SimPlaneDataStructure simPlaneDataStructure,
+            SimPlaneDataStructure simPlaneDataStructure,
             int flightId,
             long seq
         )

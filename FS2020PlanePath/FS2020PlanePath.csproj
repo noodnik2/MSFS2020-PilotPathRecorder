@@ -189,6 +189,8 @@
     <Compile Include="MainPage.Designer.cs">
       <DependentUpon>MainPage.cs</DependentUpon>
     </Compile>
+    <Compile Include="MSFS2020_SimConnectIntergrationInterface.cs" />
+    <Compile Include="SimConnectEmulationRandomWalk.cs" />
     <Compile Include="MSFS2020_SimConnectIntergration.cs" />
     <Compile Include="MultiTrackKmlGenerator.cs" />
     <Compile Include="Program.cs" />

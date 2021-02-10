@@ -17,11 +17,13 @@ namespace FS2020PlanePath
     public class MSFS2020_SimConnectIntergration
     {
         private /*static*/ SimConnect simConnect;
-        public const int WM_USER_SIMCONNECT = 0x0402;
-        private MainPage fForm;
+        private const int WM_USER_SIMCONNECT = 0x0402;
+        private Control parentControl { get; set; }
 
-        public MainPage FForm { get => fForm; set => fForm = value; }
-        public /*static*/ SimConnect SimConnect { get => simConnect; }
+        private Action<SimPlaneDataStructure> simPlaneDataHandler;
+        private Action<SimEnvironmentDataStructure> simPlaneEnvironmentChangeHandler;
+
+        private /*static*/ SimConnect SimConnect { get => simConnect; }
         private bool bSimInitalized;
 
         enum DATA_REQUESTS
@@ -93,14 +95,21 @@ namespace FS2020PlanePath
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]
-        struct SimEnvironmentDataStructure
+        public struct SimEnvironmentDataStructure
         {
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
             public string title;
         }
 
-        public MSFS2020_SimConnectIntergration()
+        public MSFS2020_SimConnectIntergration(
+            Control parentControl,
+            Action<SimPlaneDataStructure> simPlaneDataHandler,
+            Action<SimEnvironmentDataStructure> simPlaneEnvironmentChangeHandler
+        )
         {
+            this.parentControl = parentControl;
+            this.simPlaneDataHandler = simPlaneDataHandler;
+            this.simPlaneEnvironmentChangeHandler = simPlaneEnvironmentChangeHandler;
             bSimInitalized = false;
         }
 
@@ -134,6 +143,26 @@ namespace FS2020PlanePath
         public bool IsSimInitialized()
         {
             return bSimInitalized;
+        }
+
+        public bool HandleWindowMessage(ref Message m, Action<Exception> errorHandler)
+        {
+            if (m.Msg == MSFS2020_SimConnectIntergration.WM_USER_SIMCONNECT)
+            {
+                if (SimConnect != null)
+                {
+                    try
+                    {
+                        SimConnect.ReceiveMessage();
+                    }
+                    catch (Exception ex)
+                    {
+                        errorHandler.Invoke(ex);
+                    }
+                }
+                return true;
+            }
+            return false;
         }
 
         private void SetupEvents()
@@ -277,17 +306,14 @@ namespace FS2020PlanePath
         // once that is received then ask once a second for aircraft info
         void SimConnect_OnRecvSimobjectData(SimConnect sender, SIMCONNECT_RECV_SIMOBJECT_DATA data)
         {
-            switch ((DATA_REQUESTS)data.dwRequestID)
+            switch ((DATA_REQUESTS) data.dwRequestID)
             {
                 case DATA_REQUESTS.DataRequest:
-                    SimPlaneDataStructure s1 = (SimPlaneDataStructure)data.dwData[0];
-
-                    FForm.UseData(s1);
+                    simPlaneDataHandler.Invoke((SimPlaneDataStructure) data.dwData[0]);
                     break;
 
                 case DATA_REQUESTS.SimEnvironmentReq:
-                    SimEnvironmentDataStructure s2 = (SimEnvironmentDataStructure)data.dwData[0];
-                    FForm.UseSimEnvData(s2.title);
+                    simPlaneEnvironmentChangeHandler.Invoke((SimEnvironmentDataStructure) data.dwData[0]);
                     break;
 
                 default:
@@ -307,8 +333,7 @@ namespace FS2020PlanePath
 
             try
             {
-
-                simConnect = new SimConnect("MainPage", fForm.Handle, WM_USER_SIMCONNECT, null, 0);
+                simConnect = new SimConnect("MainPage", parentControl.Handle, WM_USER_SIMCONNECT, null, 0);
                 return true;
             }
             catch (COMException ex)

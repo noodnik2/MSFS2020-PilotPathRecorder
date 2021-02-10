@@ -64,6 +64,7 @@
             this.geLinkBT = new System.Windows.Forms.Button();
             this.LiveCameraKmlResetBT = new System.Windows.Forms.Button();
             this.LiveCameraHostPortCB = new System.Windows.Forms.ComboBox();
+            this.randomSimBT = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label2
@@ -395,11 +396,22 @@
             this.toolTip1.SetToolTip(this.LiveCameraHostPortCB, "Set \'Live Camera\' listener address");
             this.LiveCameraHostPortCB.Validating += new System.ComponentModel.CancelEventHandler(this.ValidateNetworkLink);
             // 
+            // randomSimBT
+            // 
+            this.randomSimBT.Location = new System.Drawing.Point(434, 4);
+            this.randomSimBT.Name = "randomSimBT";
+            this.randomSimBT.Size = new System.Drawing.Size(62, 23);
+            this.randomSimBT.TabIndex = 33;
+            this.randomSimBT.Text = "Random";
+            this.randomSimBT.UseVisualStyleBackColor = true;
+            this.randomSimBT.Click += new System.EventHandler(this.randomSimBT_Click);
+            // 
             // MainPage
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(557, 518);
+            this.Controls.Add(this.randomSimBT);
             this.Controls.Add(this.LiveCameraHostPortCB);
             this.Controls.Add(this.LiveCameraKmlResetBT);
             this.Controls.Add(this.geLinkBT);
@@ -478,6 +490,7 @@
         private System.Windows.Forms.Button geLinkBT;
         private System.Windows.Forms.Button LiveCameraKmlResetBT;
         private System.Windows.Forms.ComboBox LiveCameraHostPortCB;
+        private System.Windows.Forms.Button randomSimBT;
     }
 }
 

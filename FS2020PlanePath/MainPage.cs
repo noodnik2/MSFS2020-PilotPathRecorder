@@ -19,6 +19,7 @@ using System.Diagnostics;
 
 namespace FS2020PlanePath
 {
+
     public partial class MainPage : Form
     {
 
@@ -26,7 +27,7 @@ namespace FS2020PlanePath
         const string sourceRepo = "noodnik2/MSFS2020-PilotPathRecorder";
 
         bool bLoggingEnabled = false;
-        MSFS2020_SimConnectIntergration simConnectIntegration = new MSFS2020_SimConnectIntergration();
+        MSFS2020_SimConnectIntergrationInterface simConnectIntegration;
         ScKmlAdapter scKmlAdapter;
         LiveCamRegistry liveCamRegistry;
         LiveCamServer liveCamServer;
@@ -37,84 +38,12 @@ namespace FS2020PlanePath
         bool bStartedLoggingDueToSpeed;
         bool bStoppedLoggingDueToSpeed;
 
-        // TODO test only - remove this or polish its integration
-        static FlightPathData currentSample = new FlightPathData
-        {
-            timestamp = DateTime.Now.Ticks,
-            longitude = -121.6601805,
-            latitude = 38.0282797,
-            altitude = 2000,
-            plane_pitch = 0,
-            plane_bank = 0,
-            plane_heading_true = 200,
-            ground_velocity = 40           // nm/hr
-        };
-
-       // TODO test only - remove this method
-       private List<FlightPathData> GetLiveCamTrackSinceDateTimestamp(int pk, long earliestTimestamp)
-        {
-            List<FlightPathData> samples = new List<FlightPathData>();
-            long ticksPerSample = System.TimeSpan.TicksPerSecond / 2;
-            Random random = new Random();
-
-            for (
-                currentSample.timestamp = Math.Max(currentSample.timestamp, earliestTimestamp) + ticksPerSample;
-                currentSample.timestamp <= DateTime.Now.Ticks;
-                currentSample.timestamp += ticksPerSample
-            )
-            {
-
-                double distancePerHr = currentSample.ground_velocity += random.NextDouble() - 0.5;
-                double distancePerTick = distancePerHr / (3600 * System.TimeSpan.TicksPerSecond);
-                double distancePerSample = distancePerTick * ticksPerSample;
-
-                double bearing = GeoCalcUtils.rationalizedCompassDirection(
-                    currentSample.plane_heading_true + 5 * (random.NextDouble() - 0.5)
-                );
-
-                (double lat, double lon) to = GeoCalcUtils.calcLatLonOffset(
-                    GeoCalcUtils.normalizedIso6709GeoDirection(currentSample.latitude),
-                    GeoCalcUtils.normalizedIso6709GeoDirection(currentSample.longitude),
-                    bearing,
-                    distancePerSample
-                );
-
-                //Console.WriteLine($"brg({bearing}),v({distancePerHr}),d({distancePerSample}),p({GeoCalcUtils.pcoord(to)}");
-
-                currentSample.ground_velocity = distancePerHr;
-                currentSample.plane_heading_true = bearing;
-                currentSample.latitude = to.lat;
-                currentSample.longitude = to.lon;
-                samples.Add(
-                    new FlightPathData
-                    {
-                        timestamp = currentSample.timestamp,
-                        longitude = currentSample.longitude,
-                        latitude = currentSample.latitude,
-                        altitude = currentSample.altitude,
-                        plane_pitch = currentSample.plane_pitch,
-                        plane_bank = currentSample.plane_bank,
-                        plane_heading_true = currentSample.plane_heading_true,
-                        ground_velocity = currentSample.ground_velocity
-                    }
-                );
-                
-            }
-
-            return samples;
-        }
 
         public KmlCameraParameterValues[] getKmlCameraUpdates(int flightId, long seqSince)
         {
             Console.WriteLine($"looking for camera updates({flightId}, {seqSince})");
 
-            // use sim data if we're in an actual flight and logging;
-            // otherwise use our fake dataset (useful for testing)
-            List<FlightPathData> flightPaths = (
-                (bLoggingEnabled && nCurrentFlightID != 0)
-              ? FlightPathDB.GetLiveCamTrackSinceDateTimestamp(flightId, seqSince)
-              : GetLiveCamTrackSinceDateTimestamp(flightId, seqSince)
-            );
+            List<FlightPathData> flightPaths = FlightPathDB.GetLiveCamTrackSinceDateTimestamp(flightId, seqSince);
 
             KmlCameraParameterValues[] kmlCameraUpdates = new KmlCameraParameterValues[flightPaths.Count];
             int cameraIndex = 0;
@@ -176,6 +105,13 @@ namespace FS2020PlanePath
             scKmlAdapter = new ScKmlAdapter(kmlCameraParameterValues);
             liveCamServer = new LiveCamServer(scKmlAdapter, liveCamRegistry);
 
+            simConnectIntegration = new MSFS2020_SimConnectIntergrationInterface(
+                MSFS2020_SimConnectIntergrationInterface.OperationalMode.SimConnect,
+                this,
+                newSimPlaneData => UseData(newSimPlaneData),
+                newSimEnvronment => UseSimEnvData(newSimEnvronment.title)
+            );
+
         }
 
         private void LogWriteFreqTB_KeyPress(object sender, KeyPressEventArgs e)
@@ -200,19 +136,19 @@ namespace FS2020PlanePath
         {
             string sAppLatestVersion;
 
-            simConnectIntegration.FForm = this;
             sAppLatestVersion = ReadLatestAppVersionFromWeb();
             if (sAppLatestVersion.Equals(Program.sAppVersion) == false)
                 if (MessageBox.Show("There is a newer version of the application available. Do you wish to download it now?", "New Version Available", MessageBoxButtons.YesNo) == DialogResult.Yes)
                     Process.Start($"https://github.com/{sourceRepo}");
-            AttemptSimConnection();
+            AttemptSimConnection(MSFS2020_SimConnectIntergrationInterface.OperationalMode.SimConnect);
             nCurrentFlightID = 0;
             bStartedLoggingDueToSpeed = false;
             bStoppedLoggingDueToSpeed = true;
         }
 
-        private void AttemptSimConnection()
+        private void AttemptSimConnection(MSFS2020_SimConnectIntergrationInterface.OperationalMode operationalMode)
         {
+            simConnectIntegration.SetOperationalMode(operationalMode);
             if (simConnectIntegration.Connect() == true)
             {
                 simConnectIntegration.Initialize();
@@ -230,25 +166,20 @@ namespace FS2020PlanePath
 
         protected override void DefWndProc(ref Message m)
         {
-            if (m.Msg == MSFS2020_SimConnectIntergration.WM_USER_SIMCONNECT)
-            {
-                if (simConnectIntegration.SimConnect != null)
-                {
-                    try
-                    {
-                        simConnectIntegration.SimConnect.ReceiveMessage();
-                    }
-                    catch (Exception ex)
+            if (
+                simConnectIntegration.HandleWindowMessage(
+                    ref m,
+                    e =>
                     {
                         SimConnectStatusLabel.Text = "Connection lost to SimConnect";
                         StopLoggingBtn.PerformClick();
                     }
-                }
-            }
-            else
+                )
+            )
             {
-                base.DefWndProc(ref m);
+                return;
             }
+            base.DefWndProc(ref m);
         }
 
         private void StartLoggingBtn_Click(object sender, EventArgs e)
@@ -258,7 +189,7 @@ namespace FS2020PlanePath
 
             // sim is not connected try one time
             if (simConnectIntegration.IsSimConnected() == false)
-                AttemptSimConnection();
+                AttemptSimConnection(MSFS2020_SimConnectIntergrationInterface.OperationalMode.SimConnect);
 
             // if sim is still not connected then abort logging
             if (simConnectIntegration.IsSimConnected() == false)
@@ -290,7 +221,7 @@ namespace FS2020PlanePath
 
         // function is called from the retrieval of information from the simconnect and in this case stores it in the database based 
         // on prefrences
-        public void UseData(MSFS2020_SimConnectIntergration.SimPlaneDataStructure simPlaneData)
+        public void UseData(SimPlaneDataStructure simPlaneData)
         {
             if (AutomaticLoggingCB.Checked == true)
             {
@@ -750,7 +681,7 @@ namespace FS2020PlanePath
         private void RetrySimConnectionBtn_Click(object sender, EventArgs e)
         {
             RetrySimConnectionBtn.Enabled = false;
-            AttemptSimConnection();
+            AttemptSimConnection(MSFS2020_SimConnectIntergrationInterface.OperationalMode.SimConnect);
         }
 
         private void LoadLiveCams() {
@@ -1072,6 +1003,11 @@ namespace FS2020PlanePath
         private string malformedUriErrorMessage(string url, UriFormatException ufe)
         {
             return $"Malformed URI: {url}.\n\nDetails: {ufe.Message}\n\nTry e.g.: 'http://localhost:8000/kmlcam/cockpit'";
+        }
+
+        private void randomSimBT_Click(object sender, EventArgs e)
+        {
+            AttemptSimConnection(MSFS2020_SimConnectIntergrationInterface.OperationalMode.RandomWalk);
         }
 
     }
