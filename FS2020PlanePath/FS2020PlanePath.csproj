@@ -189,10 +189,10 @@
     <Compile Include="MainPage.Designer.cs">
       <DependentUpon>MainPage.cs</DependentUpon>
     </Compile>
-    <Compile Include="MSFS2020_SimConnectIntergrationInterface.cs" />
-    <Compile Include="SimConnectEmulationReplay.cs" />
-    <Compile Include="SimConnectEmulationRandomWalk.cs" />
-    <Compile Include="MSFS2020_SimConnectIntergration.cs" />
+    <Compile Include="FlightDataGenerator.cs" />
+    <Compile Include="ReplayFlightDataGenerator.cs" />
+    <Compile Include="RandomWalkFlightDataGenerator.cs" />
+    <Compile Include="SimConnectFlightDataGenerator.cs" />
     <Compile Include="MultiTrackKmlGenerator.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -27,7 +27,7 @@ namespace FS2020PlanePath
         const string sourceRepo = "noodnik2/MSFS2020-PilotPathRecorder";
 
         bool bLoggingEnabled = false;
-        MSFS2020_SimConnectIntergrationInterface simConnectIntegration;
+        FlightDataGenerator flightDataGenerator;
         ScKmlAdapter scKmlAdapter;
         LiveCamRegistry liveCamRegistry;
         LiveCamServer liveCamServer;
@@ -104,8 +104,8 @@ namespace FS2020PlanePath
             scKmlAdapter = new ScKmlAdapter(kmlCameraParameterValues);
             liveCamServer = new LiveCamServer(scKmlAdapter, liveCamRegistry);
 
-            simConnectIntegration = new MSFS2020_SimConnectIntergrationInterface(
-                MSFS2020_SimConnectIntergrationInterface.OperationalMode.SimConnect,
+            flightDataGenerator = new FlightDataGenerator(
+                FlightDataGenerator.OperationalMode.SimConnect,
                 this,
                 newSimPlaneData => UseData(newSimPlaneData),
                 newSimEnvronment => UseSimEnvData(newSimEnvronment.title),
@@ -140,26 +140,26 @@ namespace FS2020PlanePath
             if (sAppLatestVersion.Equals(Program.sAppVersion) == false)
                 if (MessageBox.Show("There is a newer version of the application available. Do you wish to download it now?", "New Version Available", MessageBoxButtons.YesNo) == DialogResult.Yes)
                     Process.Start($"https://github.com/{sourceRepo}");
-            AttemptSimConnection(MSFS2020_SimConnectIntergrationInterface.OperationalMode.SimConnect);
+            AttemptSimConnection(FlightDataGenerator.OperationalMode.SimConnect);
             nCurrentFlightID = 0;
             bStartedLoggingDueToSpeed = false;
             bStoppedLoggingDueToSpeed = true;
         }
 
-        private void AttemptSimConnection(MSFS2020_SimConnectIntergrationInterface.OperationalMode operationalMode)
+        private void AttemptSimConnection(FlightDataGenerator.OperationalMode operationalMode)
         {
-            simConnectIntegration.Mode = operationalMode;
+            flightDataGenerator.Mode = operationalMode;
             UpdateConnectionDialogStatus(null);
-            if (simConnectIntegration.Connect() == true)
+            if (flightDataGenerator.Connect() == true)
             {
-                simConnectIntegration.Initialize();
+                flightDataGenerator.Initialize();
                 UpdateConnectionDialogStatus(null);
             }
         }
 
         protected override void DefWndProc(ref Message m)
         {
-            if (simConnectIntegration.HandleWindowMessage(ref m))
+            if (flightDataGenerator.HandleWindowMessage(ref m))
             {
                 return;
             }
@@ -172,14 +172,14 @@ namespace FS2020PlanePath
             dtLastDataRecord = DateTime.MinValue;
 
             // sim is not connected try one time
-            if (simConnectIntegration.IsSimConnected() == false)
-                AttemptSimConnection(MSFS2020_SimConnectIntergrationInterface.OperationalMode.SimConnect);
+            if (flightDataGenerator.IsSimConnected() == false)
+                AttemptSimConnection(FlightDataGenerator.OperationalMode.SimConnect);
 
             // if sim is still not connected then abort logging
-            if (simConnectIntegration.IsSimConnected() == false)
+            if (flightDataGenerator.IsSimConnected() == false)
                 return;
 
-            if (simConnectIntegration.IsSimInitialized() == true)
+            if (flightDataGenerator.IsSimInitialized() == true)
                 bLoggingEnabled = true;
             else
                 SimConnectStatusLabel.Text = "Unable to connect to FS2020";
@@ -205,7 +205,7 @@ namespace FS2020PlanePath
 
         // function is called from the retrieval of information from the simconnect and in this case stores it in the database based 
         // on prefrences
-        public void UseData(SimPlaneDataStructure simPlaneData)
+        public void UseData(FlightDataStructure simPlaneData)
         {
             if (AutomaticLoggingCB.Checked == true)
             {
@@ -235,7 +235,7 @@ namespace FS2020PlanePath
                 // if we don't have flight header information then ask for it and don't write out this data point
                 if (nCurrentFlightID == 0)
                 {
-                    simConnectIntegration.GetSimEnvInfo();
+                    flightDataGenerator.GetSimEnvInfo();
                 }
                 else
                 {
@@ -737,7 +737,7 @@ namespace FS2020PlanePath
             else
                 FlightPathDB.WriteTableOption("AutomaticLogging", "false");
             FlightPathDB.WriteTableOption("AutomaticLoggingThreshold", LoggingThresholdGroundVelTB.Text);
-            simConnectIntegration.CloseConnection();
+            flightDataGenerator.CloseConnection();
         }
 
         private string ReadLatestAppVersionFromWeb()
@@ -983,7 +983,7 @@ namespace FS2020PlanePath
             Button button = (Button)sender;
             if (button.Text == DISCONNECT_BUTTON_TEXT)
             {
-                simConnectIntegration.CloseConnection();
+                flightDataGenerator.CloseConnection();
                 UpdateConnectionDialogStatus(null);
                 return;
             }
@@ -1003,23 +1003,23 @@ namespace FS2020PlanePath
             RadioButton changedButton = (RadioButton) sender;
             //Console.WriteLine($"button({changedButton.Name}) now({changedButton.Checked})");
 
-            MSFS2020_SimConnectIntergrationInterface.OperationalMode changedMode = operationalModeForConnectionTypeButton(changedButton);
+            FlightDataGenerator.OperationalMode changedMode = operationalModeForConnectionTypeButton(changedButton);
             if (changedButton.Checked)
             {
                 // set the new mode
-                simConnectIntegration.Mode = changedMode;
+                flightDataGenerator.Mode = changedMode;
                 UpdateConnectionDialogStatus(null);
                 return;
             }
 
             // unset the old mode
-            if (simConnectIntegration.IsSimConnected())
+            if (flightDataGenerator.IsSimConnected())
             {
-                Debug.Assert(simConnectIntegration.Mode == changedMode);
+                Debug.Assert(flightDataGenerator.Mode == changedMode);
                 if (
                     !UserDialogUtils.obtainConfirmation(
                         "Confirm Connection Switch",
-                        $"OK to Close {simConnectIntegration.Mode}?"
+                        $"OK to Close {flightDataGenerator.Mode}?"
                     )
                 )
                 {
@@ -1028,7 +1028,7 @@ namespace FS2020PlanePath
                     changedButton.Checked = true;
                     return;
                 }
-                simConnectIntegration.CloseConnection();
+                flightDataGenerator.CloseConnection();
                 UpdateConnectionDialogStatus(null);
             }
 
@@ -1036,9 +1036,9 @@ namespace FS2020PlanePath
 
         private void UpdateConnectionDialogStatus(string statusUpdate)
         {
-            bool isConnected = simConnectIntegration.IsSimConnected();
+            bool isConnected = flightDataGenerator.IsSimConnected();
             string connectionState = statusUpdate == default(string) ? isConnected ? "Connected" : "Not Connected" : statusUpdate;
-            SimConnectStatusLabel.Text = $"{simConnectIntegration.Mode}: {connectionState}";
+            SimConnectStatusLabel.Text = $"{flightDataGenerator.Mode}: {connectionState}";
             RetrySimConnectionBtn.Text = isConnected ? DISCONNECT_BUTTON_TEXT : CONNECT_BUTTON_TEXT;
             StartLoggingBtn.Enabled = isConnected;
         }
@@ -1046,17 +1046,17 @@ namespace FS2020PlanePath
         private const string CONNECT_BUTTON_TEXT = "Connect";
         private const string DISCONNECT_BUTTON_TEXT = "Disconnect";
 
-        private MSFS2020_SimConnectIntergrationInterface.OperationalMode operationalModeForConnectionTypeButton(RadioButton changedButton)
+        private FlightDataGenerator.OperationalMode operationalModeForConnectionTypeButton(RadioButton changedButton)
         {
             if (changedButton == randomWalkRB)
             {
-                return MSFS2020_SimConnectIntergrationInterface.OperationalMode.RandomWalk;
+                return FlightDataGenerator.OperationalMode.RandomWalk;
             }
             if (changedButton == replayRB)
             {
-                return MSFS2020_SimConnectIntergrationInterface.OperationalMode.Replay;
+                return FlightDataGenerator.OperationalMode.Replay;
             }
-            return MSFS2020_SimConnectIntergrationInterface.OperationalMode.SimConnect;
+            return FlightDataGenerator.OperationalMode.SimConnect;
         }
 
     }

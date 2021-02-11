@@ -127,6 +127,7 @@
             this.SimConnectStatusLabel.TabIndex = 1;
             this.SimConnectStatusLabel.Text = "N/A";
             this.SimConnectStatusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.toolTip1.SetToolTip(this.SimConnectStatusLabel, "Status of the connection to the selected source of flight data");
             // 
             // SimConnetStatusTextBox
             // 
@@ -198,6 +199,7 @@
             this.RetrySimConnectionBtn.Size = new System.Drawing.Size(73, 37);
             this.RetrySimConnectionBtn.TabIndex = 2;
             this.RetrySimConnectionBtn.Text = "Connect";
+            this.toolTip1.SetToolTip(this.RetrySimConnectionBtn, "Connect to or disconnects from the specified source of flight data");
             this.RetrySimConnectionBtn.UseVisualStyleBackColor = true;
             this.RetrySimConnectionBtn.Click += new System.EventHandler(this.RetrySimConnectionBtn_Click);
             // 
@@ -412,6 +414,7 @@
             this.simConnectRB.TabIndex = 34;
             this.simConnectRB.TabStop = true;
             this.simConnectRB.Text = "SimConnect";
+            this.toolTip1.SetToolTip(this.simConnectRB, "Connect directly to MSFS2020 via \'SimConnect\' API.");
             this.simConnectRB.UseVisualStyleBackColor = true;
             this.simConnectRB.CheckedChanged += new System.EventHandler(this.HandleConnectionTypeChangeEvent);
             // 
@@ -435,6 +438,7 @@
             this.replayRB.Size = new System.Drawing.Size(58, 17);
             this.replayRB.TabIndex = 36;
             this.replayRB.Text = "Replay";
+            this.toolTip1.SetToolTip(this.replayRB, "Connect to data from the selected, previously recorded flight ");
             this.replayRB.UseVisualStyleBackColor = true;
             this.replayRB.CheckedChanged += new System.EventHandler(this.HandleConnectionTypeChangeEvent);
             // 
@@ -446,6 +450,7 @@
             this.randomWalkRB.Size = new System.Drawing.Size(90, 17);
             this.randomWalkRB.TabIndex = 35;
             this.randomWalkRB.Text = "RandomWalk";
+            this.toolTip1.SetToolTip(this.randomWalkRB, "Connect to a new, randomly generated  flight path");
             this.randomWalkRB.UseVisualStyleBackColor = true;
             this.randomWalkRB.CheckedChanged += new System.EventHandler(this.HandleConnectionTypeChangeEvent);
             // 

@@ -5,13 +5,13 @@ using System.Runtime.InteropServices;
 
 namespace FS2020PlanePath
 {
-    public class SimConnectEmulationRandomWalk
+    public class RandomWalkFlightDataGenerator : IFlightDataGenerator
     {
 
-        public SimConnectEmulationRandomWalk(
+        public RandomWalkFlightDataGenerator(
             Control parentControl,
-            Action<SimPlaneDataStructure> simPlaneDataHandler,
-            Action<SimEnvironmentDataStructure> simPlaneEnvironmentChangeHandler,
+            Action<FlightDataStructure> simPlaneDataHandler,
+            Action<EnvironmentDataStructure> simPlaneEnvironmentChangeHandler,
             Action<Exception> exceptionHandler
         )
         {
@@ -25,22 +25,22 @@ namespace FS2020PlanePath
             timer.Tick += TimerTickHandler;
         }
 
-        internal void GetSimEnvInfo()
+        public void GetSimEnvInfo()
         {
             simPlaneEnvironmentChangeHandler.Invoke(
-                new SimEnvironmentDataStructure
+                new EnvironmentDataStructure
                 {
                     title = "RandomWalk"
                 }
             );
         }
 
-        internal bool IsSimConnected()
+        public bool IsSimConnected()
         {
             return timer.Enabled;
         }
 
-        internal bool Connect()
+        public bool Connect()
         {
             if (IsSimConnected())
             {
@@ -52,7 +52,7 @@ namespace FS2020PlanePath
             return true;
         }
 
-        internal void CloseConnection()
+        public void CloseConnection()
         {
             if (!IsSimConnected())
             {
@@ -63,12 +63,12 @@ namespace FS2020PlanePath
             timer.Enabled = false;
         }
 
-        internal bool IsSimInitialized()
+        public bool IsSimInitialized()
         {
             return timer.Enabled;
         }
 
-        internal void Initialize()
+        public void Initialize()
         {
             if (!IsSimConnected())
             {
@@ -83,7 +83,7 @@ namespace FS2020PlanePath
             timer.Start();
         }
 
-        internal bool HandleWindowMessage(ref Message m)
+        public bool HandleWindowMessage(ref Message m)
         {
             if (m.Msg == WM_USER_SIMCONNECT)
             {
@@ -116,7 +116,7 @@ namespace FS2020PlanePath
             {
                 FlightPathData flightPathData = flightPathDataEnumerator.Current;
                 simPlaneDataHandler.Invoke(
-                    new SimPlaneDataStructure
+                    new FlightDataStructure
                     {
                         latitude = flightPathData.latitude,
                         longitude = flightPathData.longitude,
@@ -233,8 +233,8 @@ namespace FS2020PlanePath
 
         private Timer timer;
         private Control parentControl;
-        private Action<SimPlaneDataStructure> simPlaneDataHandler;
-        private Action<SimEnvironmentDataStructure> simPlaneEnvironmentChangeHandler;
+        private Action<FlightDataStructure> simPlaneDataHandler;
+        private Action<EnvironmentDataStructure> simPlaneEnvironmentChangeHandler;
         private Action<Exception> exceptionHandler;
 
     }

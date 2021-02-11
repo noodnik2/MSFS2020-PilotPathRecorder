@@ -3,36 +3,47 @@ using System.Windows.Forms;
 
 namespace FS2020PlanePath
 {
- 
-    public class MSFS2020_SimConnectIntergrationInterface
+
+    public interface IFlightDataGenerator
+    {
+        void GetSimEnvInfo();
+        bool IsSimConnected();
+        bool Connect();
+        void CloseConnection();
+        bool IsSimInitialized();
+        void Initialize();
+        bool HandleWindowMessage(ref Message m);
+    }
+
+    public class FlightDataGenerator : IFlightDataGenerator
     {
 
         // TODO consider renaming this to: "SimConnectInterface"
-        public MSFS2020_SimConnectIntergrationInterface(
+        public FlightDataGenerator(
             OperationalMode operationalMode,
             Control parentControl,
-            Action<SimPlaneDataStructure> interfacePlaneDataHandler,
-            Action<SimEnvironmentDataStructure> interfaceEnvironmentDataHandler,
+            Action<FlightDataStructure> interfacePlaneDataHandler,
+            Action<EnvironmentDataStructure> interfaceEnvironmentDataHandler,
             Action<Exception> exceptionHandler
         )
         {
-            simConnectIntegration = new MSFS2020_SimConnectIntergration(
+            simConnectGenerator = new SimConnectFlightDataGenerator(
                 parentControl,
                 simConnectData => interfacePlaneDataHandler.Invoke(
-                    InterfaceSimPlaneData(simConnectData)
+                    FlightData(simConnectData)
                 ),
                 simConnectEnvironmentData => interfaceEnvironmentDataHandler.Invoke(
-                    InterfaceSimEnvironmentData(simConnectEnvironmentData)
+                    EnvironmentData(simConnectEnvironmentData)
                 ),
                 exceptionHandler
             );
-            randomWalkInterface = new SimConnectEmulationRandomWalk(
+            randomWalkGenerator = new RandomWalkFlightDataGenerator(
                 parentControl,
                 interfacePlaneDataHandler,
                 interfaceEnvironmentDataHandler,
                 exceptionHandler
             );
-            replayInterface = new SimConnectEmulationReplay(
+            replayGenerator = new ReplayFlightDataGenerator(
                 parentControl,
                 interfacePlaneDataHandler,
                 interfaceEnvironmentDataHandler,
@@ -63,120 +74,39 @@ namespace FS2020PlanePath
         public bool Connect()
         {
             //Console.WriteLine($"connecting({operationalMode})");
-            if (operationalMode == OperationalMode.SimConnect)
-            {
-                return simConnectIntegration.Connect();
-            }
-            if (operationalMode == OperationalMode.RandomWalk)
-            {
-                return randomWalkInterface.Connect();
-            }
-            if (operationalMode == OperationalMode.Replay)
-            {
-                return replayInterface.Connect();
-            }
-            return false;
+            return DelegateGenerator.Connect();
         }
 
         public void CloseConnection()
         {
             //Console.WriteLine($"disconnecting({operationalMode})");
-            if (operationalMode == OperationalMode.SimConnect)
-            {
-                simConnectIntegration.CloseConnection();
-            }
-            if (operationalMode == OperationalMode.RandomWalk)
-            {
-                randomWalkInterface.CloseConnection();
-            }
-            if (operationalMode == OperationalMode.Replay)
-            {
-                replayInterface.CloseConnection();
-            }
+            DelegateGenerator.CloseConnection();
         }
 
         public void Initialize()
         {
             //Console.WriteLine($"initializing({operationalMode})");
-            if (operationalMode == OperationalMode.SimConnect)
-            {
-                simConnectIntegration.Initialize();
-            }
-            if (operationalMode == OperationalMode.RandomWalk)
-            {
-                randomWalkInterface.Initialize();
-            }
-            if (operationalMode == OperationalMode.Replay)
-            {
-                replayInterface.Initialize();
-            }
+            DelegateGenerator.Initialize();
         }
 
         public bool IsSimConnected()
         {
-            if (operationalMode == OperationalMode.SimConnect)
-            {
-                return simConnectIntegration.IsSimConnected();
-            }
-            if (operationalMode == OperationalMode.RandomWalk)
-            {
-                return randomWalkInterface.IsSimConnected();
-            }
-            if (operationalMode == OperationalMode.Replay)
-            {
-                return replayInterface.IsSimConnected();
-            }
-            return false;
+            return DelegateGenerator.IsSimConnected();
         }
 
         public bool IsSimInitialized()
         {
-            if (operationalMode == OperationalMode.SimConnect)
-            {
-                return simConnectIntegration.IsSimInitialized();
-            }
-            if (operationalMode == OperationalMode.RandomWalk)
-            {
-                return randomWalkInterface.IsSimInitialized();
-            }
-            if (operationalMode == OperationalMode.Replay)
-            {
-                return replayInterface.IsSimInitialized();
-            }
-            return false;
+            return DelegateGenerator.IsSimInitialized();
         }
 
         public void GetSimEnvInfo()
         {
-            if (operationalMode == OperationalMode.SimConnect)
-            {
-                simConnectIntegration.GetSimEnvInfo();
-            }
-            if (operationalMode == OperationalMode.RandomWalk)
-            {
-                randomWalkInterface.GetSimEnvInfo();
-            }
-            if (operationalMode == OperationalMode.Replay)
-            {
-                replayInterface.GetSimEnvInfo();
-            }
+            DelegateGenerator.GetSimEnvInfo();
         }
 
         public bool HandleWindowMessage(ref Message m)
         {
-            if (operationalMode == OperationalMode.SimConnect)
-            {
-                return simConnectIntegration.HandleWindowMessage(ref m);
-            }
-            if (operationalMode == OperationalMode.RandomWalk)
-            {
-                return randomWalkInterface.HandleWindowMessage(ref m);
-            }
-            if (operationalMode == OperationalMode.Replay)
-            {
-                return replayInterface.HandleWindowMessage(ref m);
-            }
-            return false;
+            return DelegateGenerator.HandleWindowMessage(ref m);
         }
 
         public enum OperationalMode
@@ -186,18 +116,42 @@ namespace FS2020PlanePath
             Replay
         }
 
+        private IFlightDataGenerator DelegateGenerator {
+            get
+            {
+                switch (operationalMode)
+                {
 
-        private static SimEnvironmentDataStructure InterfaceSimEnvironmentData(MSFS2020_SimConnectIntergration.SimEnvironmentDataStructure newSimConnectEnvironmentStructure)
+                    case OperationalMode.SimConnect:
+                        return simConnectGenerator;
+
+                    case OperationalMode.Replay:
+                        return replayGenerator;
+
+                    case OperationalMode.RandomWalk:
+                        return randomWalkGenerator;
+
+                    default:
+                        return default(IFlightDataGenerator);
+                }
+            }
+        }
+
+        private static EnvironmentDataStructure EnvironmentData(
+            SimConnectFlightDataGenerator.SimEnvironmentDataStructure newSimConnectEnvironmentStructure
+        )
         {
-            return new SimEnvironmentDataStructure
+            return new EnvironmentDataStructure
             {
                 title = newSimConnectEnvironmentStructure.title
             };
         }
 
-        private static SimPlaneDataStructure InterfaceSimPlaneData(MSFS2020_SimConnectIntergration.SimPlaneDataStructure newSimConnectData)
+        private static FlightDataStructure FlightData(
+            SimConnectFlightDataGenerator.SimPlaneDataStructure newSimConnectData
+        )
         {
-            return new SimPlaneDataStructure
+            return new FlightDataStructure
             {
                 latitude = newSimConnectData.latitude,
                 longitude = newSimConnectData.longitude,
@@ -241,14 +195,14 @@ namespace FS2020PlanePath
             };
         }
 
-        private MSFS2020_SimConnectIntergration simConnectIntegration;
-        private SimConnectEmulationRandomWalk randomWalkInterface;
-        private SimConnectEmulationReplay replayInterface;
+        private IFlightDataGenerator simConnectGenerator;
+        private IFlightDataGenerator randomWalkGenerator;
+        private IFlightDataGenerator replayGenerator;
         private OperationalMode operationalMode;
 
     }
 
-    public struct SimPlaneDataStructure
+    public struct FlightDataStructure
     {
         public double latitude;
         public double longitude;
@@ -291,7 +245,7 @@ namespace FS2020PlanePath
         public Int32 sim_on_ground;
     }
 
-    public struct SimEnvironmentDataStructure
+    public struct EnvironmentDataStructure
     {
         public string title;
     }

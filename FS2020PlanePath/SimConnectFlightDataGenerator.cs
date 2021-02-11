@@ -1,30 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Forms;
 using Microsoft.FlightSimulator.SimConnect;
-using SharpKml.Dom;
 
 namespace FS2020PlanePath
 {
-    public class MSFS2020_SimConnectIntergration
+    public class SimConnectFlightDataGenerator : IFlightDataGenerator
     {
-        private /*static*/ SimConnect simConnect;
-        private const int WM_USER_SIMCONNECT = 0x0402;
-        private Control parentControl { get; set; }
 
+        private const int WM_USER_SIMCONNECT = 0x0402;
+
+        private SimConnect simConnect;
+        private Control parentControl;
         private Action<SimPlaneDataStructure> simPlaneDataHandler;
         private Action<SimEnvironmentDataStructure> simPlaneEnvironmentChangeHandler;
         private Action<Exception> exceptionHandler;
-
-        private /*static*/ SimConnect SimConnect { get => simConnect; }
         private bool bSimInitalized;
 
         enum DATA_REQUESTS
@@ -102,7 +92,7 @@ namespace FS2020PlanePath
             public string title;
         }
 
-        public MSFS2020_SimConnectIntergration(
+        public SimConnectFlightDataGenerator(
             Control parentControl,
             Action<SimPlaneDataStructure> simPlaneDataHandler,
             Action<SimEnvironmentDataStructure> simPlaneEnvironmentChangeHandler,
@@ -127,19 +117,17 @@ namespace FS2020PlanePath
             }
         }
 
-        public bool Initialize()
+        public void Initialize()
         {
             try
             {
                 SetupEvents();
                 bSimInitalized = true;
-                return true;
             }
             catch (COMException ex)
             {
                 exceptionHandler.Invoke(ex);
                 bSimInitalized = false;
-                return false;
             }
         }
 
@@ -150,13 +138,13 @@ namespace FS2020PlanePath
 
         public bool HandleWindowMessage(ref Message m)
         {
-            if (m.Msg == MSFS2020_SimConnectIntergration.WM_USER_SIMCONNECT)
+            if (m.Msg == SimConnectFlightDataGenerator.WM_USER_SIMCONNECT)
             {
-                if (SimConnect != null)
+                if (simConnect != null)
                 {
                     try
                     {
-                        SimConnect.ReceiveMessage();
+                        simConnect.ReceiveMessage();
                     }
                     catch (Exception ex)
                     {
@@ -221,12 +209,12 @@ namespace FS2020PlanePath
                 simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS Flight Plan WP Count", "number", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
                 simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Sim On Ground", "bool", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
 
-                SimConnect.AddToDataDefinition(DEFINITIONS.SimEnvironmentDataStructure, "TITLE", null, SIMCONNECT_DATATYPE.STRING256, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+                simConnect.AddToDataDefinition(DEFINITIONS.SimEnvironmentDataStructure, "TITLE", null, SIMCONNECT_DATATYPE.STRING256, 0.0f, SimConnect.SIMCONNECT_UNUSED);
 
                 // IMPORTANT: register it with the simconnect managed wrapper marshaller
                 // if you skip this step, you will only receive a uint in the .dwData field.
                 simConnect.RegisterDataDefineStruct<SimPlaneDataStructure>(DEFINITIONS.SimPlaneDataStructure);
-                SimConnect.RegisterDataDefineStruct<SimEnvironmentDataStructure>(DEFINITIONS.SimEnvironmentDataStructure);
+                simConnect.RegisterDataDefineStruct<SimEnvironmentDataStructure>(DEFINITIONS.SimEnvironmentDataStructure);
 
                 simConnect.OnRecvSimobjectData += new SimConnect.RecvSimobjectDataEventHandler(SimConnect_OnRecvSimobjectData);
                 simConnect.RequestDataOnSimObject(DATA_REQUESTS.DataRequest, DEFINITIONS.SimPlaneDataStructure, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD.SECOND, SIMCONNECT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0);
@@ -256,7 +244,6 @@ namespace FS2020PlanePath
         void SimConnect_OnRecvOpen(SimConnect sender, SIMCONNECT_RECV_OPEN data)
         {
         }
-
 
         void SimConnect_OnRecvQuit(SimConnect sender, SIMCONNECT_RECV data)
         {
@@ -359,7 +346,7 @@ namespace FS2020PlanePath
 
         public bool IsSimConnected()
         {
-            return (SimConnect != null);
+            return simConnect != default(SimConnect);
         }
 
     }
