@@ -12,7 +12,8 @@ namespace FS2020PlanePath
             OperationalMode operationalMode,
             Control parentControl,
             Action<SimPlaneDataStructure> interfacePlaneDataHandler,
-            Action<SimEnvironmentDataStructure> interfaceEnvironmentDataHandler
+            Action<SimEnvironmentDataStructure> interfaceEnvironmentDataHandler,
+            Action<Exception> exceptionHandler
         )
         {
             simConnectIntegration = new MSFS2020_SimConnectIntergration(
@@ -22,27 +23,46 @@ namespace FS2020PlanePath
                 ),
                 simConnectEnvironmentData => interfaceEnvironmentDataHandler.Invoke(
                     InterfaceSimEnvironmentData(simConnectEnvironmentData)
-                )
+                ),
+                exceptionHandler
             );
             randomWalkInterface = new SimConnectEmulationRandomWalk(
                 parentControl,
                 interfacePlaneDataHandler,
-                interfaceEnvironmentDataHandler
+                interfaceEnvironmentDataHandler,
+                exceptionHandler
+            );
+            replayInterface = new SimConnectEmulationReplay(
+                parentControl,
+                interfacePlaneDataHandler,
+                interfaceEnvironmentDataHandler,
+                exceptionHandler
             );
             this.operationalMode = operationalMode;
         }
 
-        public void SetOperationalMode(OperationalMode operationalMode)
+        public OperationalMode Mode
         {
-            if (operationalMode != this.operationalMode)
+            get => operationalMode;
+            set
             {
-                CloseConnection();
+                if (value == operationalMode)
+                {
+                    //Console.WriteLine($"call ignored; operational mode already({value})");
+                    return;
+                }
+                if (IsSimConnected())
+                {
+                    CloseConnection();
+                }
+                //Console.WriteLine($"setting operationalMode({value})");
+                operationalMode = value;
             }
-            this.operationalMode = operationalMode;
         }
 
         public bool Connect()
         {
+            //Console.WriteLine($"connecting({operationalMode})");
             if (operationalMode == OperationalMode.SimConnect)
             {
                 return simConnectIntegration.Connect();
@@ -51,11 +71,16 @@ namespace FS2020PlanePath
             {
                 return randomWalkInterface.Connect();
             }
+            if (operationalMode == OperationalMode.Replay)
+            {
+                return replayInterface.Connect();
+            }
             return false;
         }
 
         public void CloseConnection()
         {
+            //Console.WriteLine($"disconnecting({operationalMode})");
             if (operationalMode == OperationalMode.SimConnect)
             {
                 simConnectIntegration.CloseConnection();
@@ -64,10 +89,15 @@ namespace FS2020PlanePath
             {
                 randomWalkInterface.CloseConnection();
             }
+            if (operationalMode == OperationalMode.Replay)
+            {
+                replayInterface.CloseConnection();
+            }
         }
 
         public void Initialize()
         {
+            //Console.WriteLine($"initializing({operationalMode})");
             if (operationalMode == OperationalMode.SimConnect)
             {
                 simConnectIntegration.Initialize();
@@ -75,6 +105,10 @@ namespace FS2020PlanePath
             if (operationalMode == OperationalMode.RandomWalk)
             {
                 randomWalkInterface.Initialize();
+            }
+            if (operationalMode == OperationalMode.Replay)
+            {
+                replayInterface.Initialize();
             }
         }
 
@@ -87,6 +121,10 @@ namespace FS2020PlanePath
             if (operationalMode == OperationalMode.RandomWalk)
             {
                 return randomWalkInterface.IsSimConnected();
+            }
+            if (operationalMode == OperationalMode.Replay)
+            {
+                return replayInterface.IsSimConnected();
             }
             return false;
         }
@@ -101,6 +139,10 @@ namespace FS2020PlanePath
             {
                 return randomWalkInterface.IsSimInitialized();
             }
+            if (operationalMode == OperationalMode.Replay)
+            {
+                return replayInterface.IsSimInitialized();
+            }
             return false;
         }
 
@@ -114,17 +156,25 @@ namespace FS2020PlanePath
             {
                 randomWalkInterface.GetSimEnvInfo();
             }
+            if (operationalMode == OperationalMode.Replay)
+            {
+                replayInterface.GetSimEnvInfo();
+            }
         }
 
-        public bool HandleWindowMessage(ref Message m, Action<Exception> errorHandler)
+        public bool HandleWindowMessage(ref Message m)
         {
             if (operationalMode == OperationalMode.SimConnect)
             {
-                return simConnectIntegration.HandleWindowMessage(ref m, errorHandler);
+                return simConnectIntegration.HandleWindowMessage(ref m);
             }
             if (operationalMode == OperationalMode.RandomWalk)
             {
-                return randomWalkInterface.HandleWindowMessage(ref m, errorHandler);
+                return randomWalkInterface.HandleWindowMessage(ref m);
+            }
+            if (operationalMode == OperationalMode.Replay)
+            {
+                return replayInterface.HandleWindowMessage(ref m);
             }
             return false;
         }
@@ -132,7 +182,8 @@ namespace FS2020PlanePath
         public enum OperationalMode
         {
             SimConnect,
-            RandomWalk
+            RandomWalk,
+            Replay
         }
 
 
@@ -192,6 +243,7 @@ namespace FS2020PlanePath
 
         private MSFS2020_SimConnectIntergration simConnectIntegration;
         private SimConnectEmulationRandomWalk randomWalkInterface;
+        private SimConnectEmulationReplay replayInterface;
         private OperationalMode operationalMode;
 
     }

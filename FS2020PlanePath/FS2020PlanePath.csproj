@@ -190,6 +190,7 @@
       <DependentUpon>MainPage.cs</DependentUpon>
     </Compile>
     <Compile Include="MSFS2020_SimConnectIntergrationInterface.cs" />
+    <Compile Include="SimConnectEmulationReplay.cs" />
     <Compile Include="SimConnectEmulationRandomWalk.cs" />
     <Compile Include="MSFS2020_SimConnectIntergration.cs" />
     <Compile Include="MultiTrackKmlGenerator.cs" />

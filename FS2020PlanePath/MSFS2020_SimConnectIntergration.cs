@@ -22,6 +22,7 @@ namespace FS2020PlanePath
 
         private Action<SimPlaneDataStructure> simPlaneDataHandler;
         private Action<SimEnvironmentDataStructure> simPlaneEnvironmentChangeHandler;
+        private Action<Exception> exceptionHandler;
 
         private /*static*/ SimConnect SimConnect { get => simConnect; }
         private bool bSimInitalized;
@@ -104,12 +105,14 @@ namespace FS2020PlanePath
         public MSFS2020_SimConnectIntergration(
             Control parentControl,
             Action<SimPlaneDataStructure> simPlaneDataHandler,
-            Action<SimEnvironmentDataStructure> simPlaneEnvironmentChangeHandler
+            Action<SimEnvironmentDataStructure> simPlaneEnvironmentChangeHandler,
+            Action<Exception> exceptionHandler
         )
         {
             this.parentControl = parentControl;
             this.simPlaneDataHandler = simPlaneDataHandler;
             this.simPlaneEnvironmentChangeHandler = simPlaneEnvironmentChangeHandler;
+            this.exceptionHandler = exceptionHandler;
             bSimInitalized = false;
         }
 
@@ -134,7 +137,7 @@ namespace FS2020PlanePath
             }
             catch (COMException ex)
             {
-                // eat exception and return false 
+                exceptionHandler.Invoke(ex);
                 bSimInitalized = false;
                 return false;
             }
@@ -145,7 +148,7 @@ namespace FS2020PlanePath
             return bSimInitalized;
         }
 
-        public bool HandleWindowMessage(ref Message m, Action<Exception> errorHandler)
+        public bool HandleWindowMessage(ref Message m)
         {
             if (m.Msg == MSFS2020_SimConnectIntergration.WM_USER_SIMCONNECT)
             {
@@ -157,7 +160,7 @@ namespace FS2020PlanePath
                     }
                     catch (Exception ex)
                     {
-                        errorHandler.Invoke(ex);
+                        exceptionHandler.Invoke(ex);
                     }
                 }
                 return true;
@@ -239,7 +242,7 @@ namespace FS2020PlanePath
             }
             catch (COMException ex)
             {
-                // currently eat exceptions
+                exceptionHandler.Invoke(ex);
             }
         }
 
@@ -338,6 +341,7 @@ namespace FS2020PlanePath
             }
             catch (COMException ex)
             {
+                exceptionHandler.Invoke(ex);
                 return false;
             }
         }
@@ -357,5 +361,7 @@ namespace FS2020PlanePath
         {
             return (SimConnect != null);
         }
+
     }
+
  }

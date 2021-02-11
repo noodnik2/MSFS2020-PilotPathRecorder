@@ -5,10 +5,10 @@ using System.Runtime.InteropServices;
 
 namespace FS2020PlanePath
 {
-    public class SimConnectEmulationRandomWalk
+    public class SimConnectEmulationReplay
     {
 
-        public SimConnectEmulationRandomWalk(
+        public SimConnectEmulationReplay(
             Control parentControl,
             Action<SimPlaneDataStructure> simPlaneDataHandler,
             Action<SimEnvironmentDataStructure> simPlaneEnvironmentChangeHandler,
@@ -30,7 +30,7 @@ namespace FS2020PlanePath
             simPlaneEnvironmentChangeHandler.Invoke(
                 new SimEnvironmentDataStructure
                 {
-                    title = "RandomWalk"
+                    title = "Replay"
                 }
             );
         }
@@ -236,7 +236,6 @@ namespace FS2020PlanePath
         private Action<SimPlaneDataStructure> simPlaneDataHandler;
         private Action<SimEnvironmentDataStructure> simPlaneEnvironmentChangeHandler;
         private Action<Exception> exceptionHandler;
-
     }
 
 }

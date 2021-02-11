@@ -38,7 +38,6 @@ namespace FS2020PlanePath
         bool bStartedLoggingDueToSpeed;
         bool bStoppedLoggingDueToSpeed;
 
-
         public KmlCameraParameterValues[] getKmlCameraUpdates(int flightId, long seqSince)
         {
             Console.WriteLine($"looking for camera updates({flightId}, {seqSince})");
@@ -109,7 +108,8 @@ namespace FS2020PlanePath
                 MSFS2020_SimConnectIntergrationInterface.OperationalMode.SimConnect,
                 this,
                 newSimPlaneData => UseData(newSimPlaneData),
-                newSimEnvronment => UseSimEnvData(newSimEnvronment.title)
+                newSimEnvronment => UseSimEnvData(newSimEnvronment.title),
+                e => UpdateConnectionDialogStatus($"Error: {e.Message}")
             );
 
         }
@@ -148,34 +148,18 @@ namespace FS2020PlanePath
 
         private void AttemptSimConnection(MSFS2020_SimConnectIntergrationInterface.OperationalMode operationalMode)
         {
-            simConnectIntegration.SetOperationalMode(operationalMode);
+            simConnectIntegration.Mode = operationalMode;
+            UpdateConnectionDialogStatus(null);
             if (simConnectIntegration.Connect() == true)
             {
                 simConnectIntegration.Initialize();
-                SimConnectStatusLabel.Text = "SimConnect Connected";
-                StartLoggingBtn.Enabled = true;
-                RetrySimConnectionBtn.Enabled = false;
-            }
-            else
-            {
-                SimConnectStatusLabel.Text = "Unable to connect to FS2020";
-                RetrySimConnectionBtn.Enabled = true;
-                StartLoggingBtn.Enabled = false;
+                UpdateConnectionDialogStatus(null);
             }
         }
 
         protected override void DefWndProc(ref Message m)
         {
-            if (
-                simConnectIntegration.HandleWindowMessage(
-                    ref m,
-                    e =>
-                    {
-                        SimConnectStatusLabel.Text = "Connection lost to SimConnect";
-                        StopLoggingBtn.PerformClick();
-                    }
-                )
-            )
+            if (simConnectIntegration.HandleWindowMessage(ref m))
             {
                 return;
             }
@@ -678,12 +662,6 @@ namespace FS2020PlanePath
             ContinueLogginBtn.Enabled = false;
         }
 
-        private void RetrySimConnectionBtn_Click(object sender, EventArgs e)
-        {
-            RetrySimConnectionBtn.Enabled = false;
-            AttemptSimConnection(MSFS2020_SimConnectIntergrationInterface.OperationalMode.SimConnect);
-        }
-
         private void LoadLiveCams() {
             LiveCameraHostPortCB.Items.Clear();
             List<string> liveCamAliases = liveCamRegistry.GetIds(1000);
@@ -812,11 +790,6 @@ namespace FS2020PlanePath
         private void AutomaticLoggingCB_Click(object sender, EventArgs e)
         {
             LoggingThresholdGroundVelTB.Enabled = AutomaticLoggingCB.Checked;
-        }
-
-        private void ErrorTBRO_TextChanged(object sender, EventArgs e)
-        {
-
         }
 
         private void LiveCameraCB_CheckedChanged(object sender, EventArgs eventArgs)
@@ -1005,9 +978,85 @@ namespace FS2020PlanePath
             return $"Malformed URI: {url}.\n\nDetails: {ufe.Message}\n\nTry e.g.: 'http://localhost:8000/kmlcam/cockpit'";
         }
 
-        private void randomSimBT_Click(object sender, EventArgs e)
+        private void RetrySimConnectionBtn_Click(object sender, EventArgs e)
         {
-            AttemptSimConnection(MSFS2020_SimConnectIntergrationInterface.OperationalMode.RandomWalk);
+            Button button = (Button)sender;
+            if (button.Text == DISCONNECT_BUTTON_TEXT)
+            {
+                simConnectIntegration.CloseConnection();
+                UpdateConnectionDialogStatus(null);
+                return;
+            }
+            AttemptSimConnection(
+                operationalModeForConnectionTypeButton(
+                    connectionTypeGB
+                    .Controls
+                    .OfType<RadioButton>()
+                    .FirstOrDefault(r => r.Checked)
+                )
+            );
+        }
+
+        private void HandleConnectionTypeChangeEvent(object sender, EventArgs e)
+        {
+
+            RadioButton changedButton = (RadioButton) sender;
+            //Console.WriteLine($"button({changedButton.Name}) now({changedButton.Checked})");
+
+            MSFS2020_SimConnectIntergrationInterface.OperationalMode changedMode = operationalModeForConnectionTypeButton(changedButton);
+            if (changedButton.Checked)
+            {
+                // set the new mode
+                simConnectIntegration.Mode = changedMode;
+                UpdateConnectionDialogStatus(null);
+                return;
+            }
+
+            // unset the old mode
+            if (simConnectIntegration.IsSimConnected())
+            {
+                Debug.Assert(simConnectIntegration.Mode == changedMode);
+                if (
+                    !UserDialogUtils.obtainConfirmation(
+                        "Confirm Connection Switch",
+                        $"OK to Close {simConnectIntegration.Mode}?"
+                    )
+                )
+                {
+                    // user didn't approve the change, so change the
+                    // button back to reflect the active connection type
+                    changedButton.Checked = true;
+                    return;
+                }
+                simConnectIntegration.CloseConnection();
+                UpdateConnectionDialogStatus(null);
+            }
+
+        }
+
+        private void UpdateConnectionDialogStatus(string statusUpdate)
+        {
+            bool isConnected = simConnectIntegration.IsSimConnected();
+            string connectionState = statusUpdate == default(string) ? isConnected ? "Connected" : "Not Connected" : statusUpdate;
+            SimConnectStatusLabel.Text = $"{simConnectIntegration.Mode}: {connectionState}";
+            RetrySimConnectionBtn.Text = isConnected ? DISCONNECT_BUTTON_TEXT : CONNECT_BUTTON_TEXT;
+            StartLoggingBtn.Enabled = isConnected;
+        }
+
+        private const string CONNECT_BUTTON_TEXT = "Connect";
+        private const string DISCONNECT_BUTTON_TEXT = "Disconnect";
+
+        private MSFS2020_SimConnectIntergrationInterface.OperationalMode operationalModeForConnectionTypeButton(RadioButton changedButton)
+        {
+            if (changedButton == randomWalkRB)
+            {
+                return MSFS2020_SimConnectIntergrationInterface.OperationalMode.RandomWalk;
+            }
+            if (changedButton == replayRB)
+            {
+                return MSFS2020_SimConnectIntergrationInterface.OperationalMode.Replay;
+            }
+            return MSFS2020_SimConnectIntergrationInterface.OperationalMode.SimConnect;
         }
 
     }

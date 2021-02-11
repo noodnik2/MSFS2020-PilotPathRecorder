@@ -64,13 +64,17 @@
             this.geLinkBT = new System.Windows.Forms.Button();
             this.LiveCameraKmlResetBT = new System.Windows.Forms.Button();
             this.LiveCameraHostPortCB = new System.Windows.Forms.ComboBox();
-            this.randomSimBT = new System.Windows.Forms.Button();
+            this.simConnectRB = new System.Windows.Forms.RadioButton();
+            this.connectionTypeGB = new System.Windows.Forms.GroupBox();
+            this.replayRB = new System.Windows.Forms.RadioButton();
+            this.randomWalkRB = new System.Windows.Forms.RadioButton();
+            this.connectionTypeGB.SuspendLayout();
             this.SuspendLayout();
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(10, 82);
+            this.label2.Location = new System.Drawing.Point(10, 109);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(242, 13);
             this.label2.TabIndex = 5;
@@ -78,7 +82,7 @@
             // 
             // ThresholdLogWriteFreqTB
             // 
-            this.ThresholdLogWriteFreqTB.Location = new System.Drawing.Point(256, 79);
+            this.ThresholdLogWriteFreqTB.Location = new System.Drawing.Point(256, 106);
             this.ThresholdLogWriteFreqTB.Name = "ThresholdLogWriteFreqTB";
             this.ThresholdLogWriteFreqTB.Size = new System.Drawing.Size(48, 20);
             this.ThresholdLogWriteFreqTB.TabIndex = 6;
@@ -87,7 +91,7 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(12, 366);
+            this.label3.Location = new System.Drawing.Point(12, 393);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(76, 13);
             this.label3.TabIndex = 20;
@@ -95,7 +99,7 @@
             // 
             // KMLFolderBrowser
             // 
-            this.KMLFolderBrowser.Location = new System.Drawing.Point(422, 361);
+            this.KMLFolderBrowser.Location = new System.Drawing.Point(422, 388);
             this.KMLFolderBrowser.Name = "KMLFolderBrowser";
             this.KMLFolderBrowser.Size = new System.Drawing.Size(117, 23);
             this.KMLFolderBrowser.TabIndex = 22;
@@ -105,7 +109,7 @@
             // 
             // KMLFilePathTBRO
             // 
-            this.KMLFilePathTBRO.Location = new System.Drawing.Point(125, 363);
+            this.KMLFilePathTBRO.Location = new System.Drawing.Point(125, 390);
             this.KMLFilePathTBRO.Name = "KMLFilePathTBRO";
             this.KMLFilePathTBRO.ReadOnly = true;
             this.KMLFilePathTBRO.Size = new System.Drawing.Size(272, 20);
@@ -113,26 +117,30 @@
             // 
             // SimConnectStatusLabel
             // 
-            this.SimConnectStatusLabel.AutoSize = true;
-            this.SimConnectStatusLabel.Location = new System.Drawing.Point(119, 9);
+            this.SimConnectStatusLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.SimConnectStatusLabel.AutoEllipsis = true;
+            this.SimConnectStatusLabel.Location = new System.Drawing.Point(55, 7);
             this.SimConnectStatusLabel.Name = "SimConnectStatusLabel";
-            this.SimConnectStatusLabel.Size = new System.Drawing.Size(27, 13);
+            this.SimConnectStatusLabel.Size = new System.Drawing.Size(167, 39);
             this.SimConnectStatusLabel.TabIndex = 1;
             this.SimConnectStatusLabel.Text = "N/A";
+            this.SimConnectStatusLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // SimConnetStatusTextBox
             // 
             this.SimConnetStatusTextBox.AutoSize = true;
-            this.SimConnetStatusTextBox.Location = new System.Drawing.Point(9, 9);
+            this.SimConnetStatusTextBox.Location = new System.Drawing.Point(9, 20);
             this.SimConnetStatusTextBox.Name = "SimConnetStatusTextBox";
-            this.SimConnetStatusTextBox.Size = new System.Drawing.Size(100, 13);
+            this.SimConnetStatusTextBox.Size = new System.Drawing.Size(40, 13);
             this.SimConnetStatusTextBox.TabIndex = 0;
-            this.SimConnetStatusTextBox.Text = "SimConnect Status:";
+            this.SimConnetStatusTextBox.Text = "Status:";
             // 
             // StartLoggingBtn
             // 
             this.StartLoggingBtn.Enabled = false;
-            this.StartLoggingBtn.Location = new System.Drawing.Point(13, 157);
+            this.StartLoggingBtn.Location = new System.Drawing.Point(13, 184);
             this.StartLoggingBtn.Name = "StartLoggingBtn";
             this.StartLoggingBtn.Size = new System.Drawing.Size(98, 23);
             this.StartLoggingBtn.TabIndex = 11;
@@ -143,7 +151,7 @@
             // StopLoggingBtn
             // 
             this.StopLoggingBtn.Enabled = false;
-            this.StopLoggingBtn.Location = new System.Drawing.Point(442, 157);
+            this.StopLoggingBtn.Location = new System.Drawing.Point(442, 184);
             this.StopLoggingBtn.Name = "StopLoggingBtn";
             this.StopLoggingBtn.Size = new System.Drawing.Size(98, 23);
             this.StopLoggingBtn.TabIndex = 14;
@@ -153,7 +161,7 @@
             // 
             // CreateKMLButton
             // 
-            this.CreateKMLButton.Location = new System.Drawing.Point(125, 479);
+            this.CreateKMLButton.Location = new System.Drawing.Point(125, 506);
             this.CreateKMLButton.Name = "CreateKMLButton";
             this.CreateKMLButton.Size = new System.Drawing.Size(97, 23);
             this.CreateKMLButton.TabIndex = 27;
@@ -164,7 +172,7 @@
             // PauseLoggingBtn
             // 
             this.PauseLoggingBtn.Enabled = false;
-            this.PauseLoggingBtn.Location = new System.Drawing.Point(156, 157);
+            this.PauseLoggingBtn.Location = new System.Drawing.Point(156, 184);
             this.PauseLoggingBtn.Name = "PauseLoggingBtn";
             this.PauseLoggingBtn.Size = new System.Drawing.Size(98, 23);
             this.PauseLoggingBtn.TabIndex = 12;
@@ -175,7 +183,7 @@
             // ContinueLogginBtn
             // 
             this.ContinueLogginBtn.Enabled = false;
-            this.ContinueLogginBtn.Location = new System.Drawing.Point(299, 157);
+            this.ContinueLogginBtn.Location = new System.Drawing.Point(299, 184);
             this.ContinueLogginBtn.Name = "ContinueLogginBtn";
             this.ContinueLogginBtn.Size = new System.Drawing.Size(98, 23);
             this.ContinueLogginBtn.TabIndex = 13;
@@ -185,19 +193,18 @@
             // 
             // RetrySimConnectionBtn
             // 
-            this.RetrySimConnectionBtn.Enabled = false;
-            this.RetrySimConnectionBtn.Location = new System.Drawing.Point(303, 4);
+            this.RetrySimConnectionBtn.Location = new System.Drawing.Point(225, 12);
             this.RetrySimConnectionBtn.Name = "RetrySimConnectionBtn";
-            this.RetrySimConnectionBtn.Size = new System.Drawing.Size(125, 23);
+            this.RetrySimConnectionBtn.Size = new System.Drawing.Size(73, 37);
             this.RetrySimConnectionBtn.TabIndex = 2;
-            this.RetrySimConnectionBtn.Text = "Retry Sim Connection";
+            this.RetrySimConnectionBtn.Text = "Connect";
             this.RetrySimConnectionBtn.UseVisualStyleBackColor = true;
             this.RetrySimConnectionBtn.Click += new System.EventHandler(this.RetrySimConnectionBtn_Click);
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(10, 63);
+            this.label1.Location = new System.Drawing.Point(10, 90);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(455, 13);
             this.label1.TabIndex = 4;
@@ -207,7 +214,7 @@
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(9, 104);
+            this.label4.Location = new System.Drawing.Point(9, 131);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(238, 13);
             this.label4.TabIndex = 7;
@@ -215,7 +222,7 @@
             // 
             // ThresholdMinAltTB
             // 
-            this.ThresholdMinAltTB.Location = new System.Drawing.Point(256, 102);
+            this.ThresholdMinAltTB.Location = new System.Drawing.Point(256, 129);
             this.ThresholdMinAltTB.Name = "ThresholdMinAltTB";
             this.ThresholdMinAltTB.Size = new System.Drawing.Size(48, 20);
             this.ThresholdMinAltTB.TabIndex = 8;
@@ -223,7 +230,7 @@
             // label5
             // 
             this.label5.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.label5.Location = new System.Drawing.Point(12, 196);
+            this.label5.Location = new System.Drawing.Point(12, 223);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(530, 2);
             this.label5.TabIndex = 15;
@@ -232,7 +239,7 @@
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(9, 249);
+            this.label6.Location = new System.Drawing.Point(9, 276);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(62, 13);
             this.label6.TabIndex = 17;
@@ -241,7 +248,7 @@
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(12, 284);
+            this.label7.Location = new System.Drawing.Point(12, 311);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(71, 13);
             this.label7.TabIndex = 19;
@@ -253,7 +260,7 @@
             this.FlightPickerLV.GridLines = true;
             this.FlightPickerLV.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.FlightPickerLV.HideSelection = false;
-            this.FlightPickerLV.Location = new System.Drawing.Point(125, 249);
+            this.FlightPickerLV.Location = new System.Drawing.Point(125, 276);
             this.FlightPickerLV.Name = "FlightPickerLV";
             this.FlightPickerLV.Size = new System.Drawing.Size(370, 97);
             this.FlightPickerLV.TabIndex = 18;
@@ -262,7 +269,7 @@
             // 
             // DeleteFlight
             // 
-            this.DeleteFlight.Location = new System.Drawing.Point(284, 479);
+            this.DeleteFlight.Location = new System.Drawing.Point(284, 506);
             this.DeleteFlight.Name = "DeleteFlight";
             this.DeleteFlight.Size = new System.Drawing.Size(152, 23);
             this.DeleteFlight.TabIndex = 28;
@@ -273,7 +280,7 @@
             // GoogleEarthAppRB
             // 
             this.GoogleEarthAppRB.AutoSize = true;
-            this.GoogleEarthAppRB.Location = new System.Drawing.Point(132, 407);
+            this.GoogleEarthAppRB.Location = new System.Drawing.Point(132, 434);
             this.GoogleEarthAppRB.Name = "GoogleEarthAppRB";
             this.GoogleEarthAppRB.Size = new System.Drawing.Size(142, 17);
             this.GoogleEarthAppRB.TabIndex = 24;
@@ -284,7 +291,7 @@
             // GoogleEarthWebRB
             // 
             this.GoogleEarthWebRB.AutoSize = true;
-            this.GoogleEarthWebRB.Location = new System.Drawing.Point(284, 407);
+            this.GoogleEarthWebRB.Location = new System.Drawing.Point(284, 434);
             this.GoogleEarthWebRB.Name = "GoogleEarthWebRB";
             this.GoogleEarthWebRB.Size = new System.Drawing.Size(113, 17);
             this.GoogleEarthWebRB.TabIndex = 25;
@@ -294,7 +301,7 @@
             // 
             // GoogleEarthGB
             // 
-            this.GoogleEarthGB.Location = new System.Drawing.Point(122, 389);
+            this.GoogleEarthGB.Location = new System.Drawing.Point(122, 416);
             this.GoogleEarthGB.Name = "GoogleEarthGB";
             this.GoogleEarthGB.Size = new System.Drawing.Size(282, 46);
             this.GoogleEarthGB.TabIndex = 23;
@@ -304,7 +311,7 @@
             // SpeedUpVideoPlaybackCB
             // 
             this.SpeedUpVideoPlaybackCB.AutoSize = true;
-            this.SpeedUpVideoPlaybackCB.Location = new System.Drawing.Point(125, 441);
+            this.SpeedUpVideoPlaybackCB.Location = new System.Drawing.Point(125, 468);
             this.SpeedUpVideoPlaybackCB.Name = "SpeedUpVideoPlaybackCB";
             this.SpeedUpVideoPlaybackCB.Size = new System.Drawing.Size(361, 17);
             this.SpeedUpVideoPlaybackCB.TabIndex = 26;
@@ -314,19 +321,18 @@
             // ErrorTBRO
             // 
             this.ErrorTBRO.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.ErrorTBRO.Location = new System.Drawing.Point(13, 30);
+            this.ErrorTBRO.Location = new System.Drawing.Point(13, 50);
             this.ErrorTBRO.Multiline = true;
             this.ErrorTBRO.Name = "ErrorTBRO";
             this.ErrorTBRO.ReadOnly = true;
-            this.ErrorTBRO.Size = new System.Drawing.Size(415, 29);
+            this.ErrorTBRO.Size = new System.Drawing.Size(536, 34);
             this.ErrorTBRO.TabIndex = 3;
             this.ErrorTBRO.TabStop = false;
-            this.ErrorTBRO.TextChanged += new System.EventHandler(this.ErrorTBRO_TextChanged);
             // 
             // AutomaticLoggingCB
             // 
             this.AutomaticLoggingCB.AutoSize = true;
-            this.AutomaticLoggingCB.Location = new System.Drawing.Point(13, 131);
+            this.AutomaticLoggingCB.Location = new System.Drawing.Point(13, 158);
             this.AutomaticLoggingCB.Name = "AutomaticLoggingCB";
             this.AutomaticLoggingCB.Size = new System.Drawing.Size(327, 17);
             this.AutomaticLoggingCB.TabIndex = 9;
@@ -336,7 +342,7 @@
             // 
             // LoggingThresholdGroundVelTB
             // 
-            this.LoggingThresholdGroundVelTB.Location = new System.Drawing.Point(346, 128);
+            this.LoggingThresholdGroundVelTB.Location = new System.Drawing.Point(346, 155);
             this.LoggingThresholdGroundVelTB.Name = "LoggingThresholdGroundVelTB";
             this.LoggingThresholdGroundVelTB.Size = new System.Drawing.Size(48, 20);
             this.LoggingThresholdGroundVelTB.TabIndex = 10;
@@ -345,7 +351,7 @@
             // 
             this.LiveCameraCB.AccessibleDescription = "";
             this.LiveCameraCB.AutoSize = true;
-            this.LiveCameraCB.Location = new System.Drawing.Point(13, 213);
+            this.LiveCameraCB.Location = new System.Drawing.Point(13, 240);
             this.LiveCameraCB.Name = "LiveCameraCB";
             this.LiveCameraCB.Size = new System.Drawing.Size(85, 17);
             this.LiveCameraCB.TabIndex = 15;
@@ -356,7 +362,7 @@
             // 
             // LiveCameraKmlBT
             // 
-            this.LiveCameraKmlBT.Location = new System.Drawing.Point(413, 213);
+            this.LiveCameraKmlBT.Location = new System.Drawing.Point(413, 240);
             this.LiveCameraKmlBT.Name = "LiveCameraKmlBT";
             this.LiveCameraKmlBT.Size = new System.Drawing.Size(38, 20);
             this.LiveCameraKmlBT.TabIndex = 29;
@@ -367,7 +373,7 @@
             // 
             // geLinkBT
             // 
-            this.geLinkBT.Location = new System.Drawing.Point(455, 213);
+            this.geLinkBT.Location = new System.Drawing.Point(455, 240);
             this.geLinkBT.Name = "geLinkBT";
             this.geLinkBT.Size = new System.Drawing.Size(38, 20);
             this.geLinkBT.TabIndex = 30;
@@ -378,7 +384,7 @@
             // 
             // LiveCameraKmlResetBT
             // 
-            this.LiveCameraKmlResetBT.Location = new System.Drawing.Point(497, 213);
+            this.LiveCameraKmlResetBT.Location = new System.Drawing.Point(497, 240);
             this.LiveCameraKmlResetBT.Name = "LiveCameraKmlResetBT";
             this.LiveCameraKmlResetBT.Size = new System.Drawing.Size(43, 20);
             this.LiveCameraKmlResetBT.TabIndex = 31;
@@ -389,29 +395,66 @@
             // 
             // LiveCameraHostPortCB
             // 
-            this.LiveCameraHostPortCB.Location = new System.Drawing.Point(125, 212);
+            this.LiveCameraHostPortCB.Location = new System.Drawing.Point(125, 239);
             this.LiveCameraHostPortCB.Name = "LiveCameraHostPortCB";
             this.LiveCameraHostPortCB.Size = new System.Drawing.Size(283, 21);
             this.LiveCameraHostPortCB.TabIndex = 32;
             this.toolTip1.SetToolTip(this.LiveCameraHostPortCB, "Set \'Live Camera\' listener address");
             this.LiveCameraHostPortCB.Validating += new System.ComponentModel.CancelEventHandler(this.ValidateNetworkLink);
             // 
-            // randomSimBT
+            // simConnectRB
             // 
-            this.randomSimBT.Location = new System.Drawing.Point(434, 4);
-            this.randomSimBT.Name = "randomSimBT";
-            this.randomSimBT.Size = new System.Drawing.Size(62, 23);
-            this.randomSimBT.TabIndex = 33;
-            this.randomSimBT.Text = "Random";
-            this.randomSimBT.UseVisualStyleBackColor = true;
-            this.randomSimBT.Click += new System.EventHandler(this.randomSimBT_Click);
+            this.simConnectRB.AutoSize = true;
+            this.simConnectRB.Checked = true;
+            this.simConnectRB.Location = new System.Drawing.Point(8, 17);
+            this.simConnectRB.Name = "simConnectRB";
+            this.simConnectRB.Size = new System.Drawing.Size(82, 17);
+            this.simConnectRB.TabIndex = 34;
+            this.simConnectRB.TabStop = true;
+            this.simConnectRB.Text = "SimConnect";
+            this.simConnectRB.UseVisualStyleBackColor = true;
+            this.simConnectRB.CheckedChanged += new System.EventHandler(this.HandleConnectionTypeChangeEvent);
+            // 
+            // connectionTypeGB
+            // 
+            this.connectionTypeGB.Controls.Add(this.replayRB);
+            this.connectionTypeGB.Controls.Add(this.randomWalkRB);
+            this.connectionTypeGB.Controls.Add(this.simConnectRB);
+            this.connectionTypeGB.Location = new System.Drawing.Point(299, 7);
+            this.connectionTypeGB.Name = "connectionTypeGB";
+            this.connectionTypeGB.Size = new System.Drawing.Size(250, 42);
+            this.connectionTypeGB.TabIndex = 35;
+            this.connectionTypeGB.TabStop = false;
+            this.connectionTypeGB.Text = "Connection Type:";
+            // 
+            // replayRB
+            // 
+            this.replayRB.AutoSize = true;
+            this.replayRB.Location = new System.Drawing.Point(92, 17);
+            this.replayRB.Name = "replayRB";
+            this.replayRB.Size = new System.Drawing.Size(58, 17);
+            this.replayRB.TabIndex = 36;
+            this.replayRB.Text = "Replay";
+            this.replayRB.UseVisualStyleBackColor = true;
+            this.replayRB.CheckedChanged += new System.EventHandler(this.HandleConnectionTypeChangeEvent);
+            // 
+            // randomWalkRB
+            // 
+            this.randomWalkRB.AutoSize = true;
+            this.randomWalkRB.Location = new System.Drawing.Point(154, 17);
+            this.randomWalkRB.Name = "randomWalkRB";
+            this.randomWalkRB.Size = new System.Drawing.Size(90, 17);
+            this.randomWalkRB.TabIndex = 35;
+            this.randomWalkRB.Text = "RandomWalk";
+            this.randomWalkRB.UseVisualStyleBackColor = true;
+            this.randomWalkRB.CheckedChanged += new System.EventHandler(this.HandleConnectionTypeChangeEvent);
             // 
             // MainPage
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(557, 518);
-            this.Controls.Add(this.randomSimBT);
+            this.ClientSize = new System.Drawing.Size(557, 547);
+            this.Controls.Add(this.connectionTypeGB);
             this.Controls.Add(this.LiveCameraHostPortCB);
             this.Controls.Add(this.LiveCameraKmlResetBT);
             this.Controls.Add(this.geLinkBT);
@@ -450,6 +493,8 @@
             this.Text = "Pilot Path Recorder v";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainPage_FormClosing);
             this.Shown += new System.EventHandler(this.MainPage_Shown);
+            this.connectionTypeGB.ResumeLayout(false);
+            this.connectionTypeGB.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -490,7 +535,10 @@
         private System.Windows.Forms.Button geLinkBT;
         private System.Windows.Forms.Button LiveCameraKmlResetBT;
         private System.Windows.Forms.ComboBox LiveCameraHostPortCB;
-        private System.Windows.Forms.Button randomSimBT;
+        private System.Windows.Forms.RadioButton simConnectRB;
+        private System.Windows.Forms.GroupBox connectionTypeGB;
+        private System.Windows.Forms.RadioButton replayRB;
+        private System.Windows.Forms.RadioButton randomWalkRB;
     }
 }
 
