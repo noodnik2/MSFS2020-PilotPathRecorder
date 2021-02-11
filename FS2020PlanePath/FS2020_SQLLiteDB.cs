@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace FS2020PlanePath
 {
-    class FlightPathData
+    public class FlightPathData
     {
         public double latitude;
         public double longitude;
@@ -984,7 +984,7 @@ namespace FS2020PlanePath
             return FlightWaypoints;
         }
 
-        public List<FlightPathData> GetLiveCamTrackSinceDateTimestamp(int pk, long earliestDateTimestamp)
+        public List<FlightPathData> GetFlightPathSinceTimestamp(int pk, long startingTimestamp)
         {
 
             SQLiteCommand sqlite_cmd = sqlite_conn.CreateCommand();
@@ -994,7 +994,7 @@ from flightsamples s, flightsampledetails d
 where s.flightsamplesid = d.flightsamplesid and sample_datetimestamp > @earliestDateTimestamp and flightid = @FlightID
 "; ;
             sqlite_cmd.Parameters.AddWithValue("@FlightID", pk);
-            sqlite_cmd.Parameters.AddWithValue("@earliestDateTimestamp", earliestDateTimestamp);
+            sqlite_cmd.Parameters.AddWithValue("@earliestDateTimestamp", startingTimestamp);
 
             try
             {
@@ -1014,7 +1014,7 @@ where s.flightsamplesid = d.flightsamplesid and sample_datetimestamp > @earliest
                         }
                     );
                 }
-                Console.WriteLine($"query for flightId({pk}) since({earliestDateTimestamp}) found({FlightPath.Count}) entries");
+                Console.WriteLine($"query for flightId({pk}) since({startingTimestamp}) found({FlightPath.Count}) entries");
                 return FlightPath;
             }
             catch (Exception ex)

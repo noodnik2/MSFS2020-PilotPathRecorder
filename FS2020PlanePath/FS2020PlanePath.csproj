@@ -189,10 +189,12 @@
     <Compile Include="MainPage.Designer.cs">
       <DependentUpon>MainPage.cs</DependentUpon>
     </Compile>
-    <Compile Include="FlightDataGenerator.cs" />
+    <Compile Include="FlightDataConnector.cs" />
+    <Compile Include="AbstractFlightDataGenerator.cs" />
     <Compile Include="ReplayFlightDataGenerator.cs" />
     <Compile Include="RandomWalkFlightDataGenerator.cs" />
-    <Compile Include="SimConnectFlightDataGenerator.cs" />
+    <Compile Include="GeneratedFlightDataConnector.cs" />
+    <Compile Include="SimConnectFlightDataConnector.cs" />
     <Compile Include="MultiTrackKmlGenerator.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -5,7 +5,7 @@ using Microsoft.FlightSimulator.SimConnect;
 
 namespace FS2020PlanePath
 {
-    public class SimConnectFlightDataGenerator : IFlightDataGenerator
+    public class SimConnectFlightDataConnector : IFlightDataConnector
     {
 
         private const int WM_USER_SIMCONNECT = 0x0402;
@@ -92,7 +92,7 @@ namespace FS2020PlanePath
             public string title;
         }
 
-        public SimConnectFlightDataGenerator(
+        public SimConnectFlightDataConnector(
             Control parentControl,
             Action<SimPlaneDataStructure> simPlaneDataHandler,
             Action<SimEnvironmentDataStructure> simPlaneEnvironmentChangeHandler,
@@ -138,7 +138,7 @@ namespace FS2020PlanePath
 
         public bool HandleWindowMessage(ref Message m)
         {
-            if (m.Msg == SimConnectFlightDataGenerator.WM_USER_SIMCONNECT)
+            if (m.Msg == SimConnectFlightDataConnector.WM_USER_SIMCONNECT)
             {
                 if (simConnect != null)
                 {
