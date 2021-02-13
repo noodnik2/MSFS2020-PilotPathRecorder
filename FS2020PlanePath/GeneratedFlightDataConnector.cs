@@ -10,7 +10,6 @@ namespace FS2020PlanePath
     {
         string Name { get; }
         IEnumerator<FlightPathData> NextFlightPathSegment();
-        void Reset();
     }
 
     public class GeneratedFlightDataConnector : IFlightDataConnector
@@ -20,14 +19,12 @@ namespace FS2020PlanePath
             Control parentControl,
             Action<FlightDataStructure> simPlaneDataHandler,
             Action<EnvironmentDataStructure> simPlaneEnvironmentChangeHandler,
-            Action<Exception> exceptionHandler,
             IFlightDataGenerator flightDataGenerator
         )
         {
             this.parentControl = parentControl;
             this.simPlaneDataHandler = simPlaneDataHandler;
             this.simPlaneEnvironmentChangeHandler = simPlaneEnvironmentChangeHandler;
-            this.exceptionHandler = exceptionHandler;
             this.flightDataGenerator = flightDataGenerator;
             timer = new Timer();
             timer.Enabled = false;
@@ -50,37 +47,22 @@ namespace FS2020PlanePath
             return timer.Enabled;
         }
 
-        public bool Connect()
+        public void Connect()
         {
-            if (IsSimConnected())
+            if (!IsSimConnected())
             {
-                //Console.WriteLine("ignoring connect call; already connected");
-                return false;
+                timer.Enabled = true;
+                timer.Start();
             }
-
-            try
-            {
-                flightDataGenerator.Reset();
-            }
-            catch (Exception e)
-            {
-                this.exceptionHandler(e);
-                return false;
-            }
-
-            timer.Enabled = true;
-            return true;
         }
 
         public void CloseConnection()
         {
-            if (!IsSimConnected())
+            if (IsSimConnected())
             {
-                //Console.WriteLine("ignoring close call; not connected");
-                return;
+                timer.Stop();
+                timer.Enabled = false;
             }
-            timer.Stop();
-            timer.Enabled = false;
         }
 
         public bool IsSimInitialized()
@@ -88,38 +70,15 @@ namespace FS2020PlanePath
             return timer.Enabled;
         }
 
-        public void Initialize()
-        {
-            if (!IsSimConnected())
-            {
-                //Console.WriteLine("ignoring initialize call; not connected");
-                return;
-            }
-            if (!IsSimInitialized())
-            {
-                //Console.WriteLine("ignoring initialize call; already initialized");
-                return;
-            }
-            timer.Start();
-        }
-
         public bool HandleWindowMessage(ref Message m)
         {
-            if (m.Msg == WM_USER_SIMCONNECT)
+            if (IsSimInitialized())
             {
-                if (IsSimInitialized())
+                if (m.Msg == WM_USER_SIMCONNECT)
                 {
-                    try
-                    {
-                        //Console.WriteLine("HandleWindowMessage");
-                        pumpFlightDataUpdates();
-                    }
-                    catch (Exception ex)
-                    {
-                        exceptionHandler.Invoke(ex);
-                    }
+                    pumpFlightDataUpdates();
+                    return true;
                 }
-                return true;
             }
             return false;
         }
@@ -166,16 +125,6 @@ namespace FS2020PlanePath
                         overspeed_warning = flightPathData.overspeed_warning,
                         is_gear_retractable = flightPathData.is_gear_retractable,
                         spoiler_available = flightPathData.spoiler_available,
-                        //gps_wp_prev_latitude = flightPathData.gps_wp_prev_latitude,
-                        //gps_wp_prev_longitude = flightPathData.gps_wp_prev_longitude,
-                        //gps_wp_prev_altitude = flightPathData.gps_wp_prev_altitude,
-                        //gps_wp_prev_id = flightPathData.gps_wp_prev_id,
-                        //gps_wp_next_latitude = flightPathData.gps_wp_next_latitude,
-                        //gps_wp_next_longitude = flightPathData.gps_wp_next_longitude,
-                        //gps_wp_next_altitude = flightPathData.gps_wp_next_altitude,
-                        //gps_wp_next_id = flightPathData.gps_wp_next_id,
-                        //gps_flight_plan_wp_index = flightPathData.gps_flight_plan_wp_index,
-                        //gps_flight_plan_wp_count = flightPathData.gps_flight_plan_wp_count,
                         sim_on_ground = flightPathData.sim_on_ground
                     }
                 );
@@ -191,7 +140,6 @@ namespace FS2020PlanePath
         private Control parentControl;
         private Action<FlightDataStructure> simPlaneDataHandler;
         private Action<EnvironmentDataStructure> simPlaneEnvironmentChangeHandler;
-        private Action<Exception> exceptionHandler;
         private IFlightDataGenerator flightDataGenerator;
 
     }

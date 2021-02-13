@@ -12,10 +12,8 @@ namespace FS2020PlanePath
 
         private SimConnect simConnect;
         private Control parentControl;
-        private Action<SimPlaneDataStructure> simPlaneDataHandler;
-        private Action<SimEnvironmentDataStructure> simPlaneEnvironmentChangeHandler;
-        private Action<Exception> exceptionHandler;
-        private bool bSimInitalized;
+        private Action<FlightDataStructure> flightDataHandler;
+        private Action<EnvironmentDataStructure> environmentDataHandler;
 
         enum DATA_REQUESTS
         {
@@ -94,16 +92,13 @@ namespace FS2020PlanePath
 
         public SimConnectFlightDataConnector(
             Control parentControl,
-            Action<SimPlaneDataStructure> simPlaneDataHandler,
-            Action<SimEnvironmentDataStructure> simPlaneEnvironmentChangeHandler,
-            Action<Exception> exceptionHandler
+            Action<FlightDataStructure> flightDataHandler,
+            Action<EnvironmentDataStructure> environmentDataHandler
         )
         {
             this.parentControl = parentControl;
-            this.simPlaneDataHandler = simPlaneDataHandler;
-            this.simPlaneEnvironmentChangeHandler = simPlaneEnvironmentChangeHandler;
-            this.exceptionHandler = exceptionHandler;
-            bSimInitalized = false;
+            this.flightDataHandler = flightDataHandler;
+            this.environmentDataHandler = environmentDataHandler;
         }
 
         public void CloseConnection()
@@ -111,29 +106,9 @@ namespace FS2020PlanePath
             if (simConnect != null)
             {
                 // Dispose serves the same purpose as SimConnect_Close()
-                bSimInitalized = false;
                 simConnect.Dispose();
                 simConnect = null;
             }
-        }
-
-        public void Initialize()
-        {
-            try
-            {
-                SetupEvents();
-                bSimInitalized = true;
-            }
-            catch (COMException ex)
-            {
-                exceptionHandler.Invoke(ex);
-                bSimInitalized = false;
-            }
-        }
-
-        public bool IsSimInitialized()
-        {
-            return bSimInitalized;
         }
 
         public bool HandleWindowMessage(ref Message m)
@@ -142,14 +117,7 @@ namespace FS2020PlanePath
             {
                 if (simConnect != null)
                 {
-                    try
-                    {
-                        simConnect.ReceiveMessage();
-                    }
-                    catch (Exception ex)
-                    {
-                        exceptionHandler.Invoke(ex);
-                    }
+                    simConnect.ReceiveMessage();
                 }
                 return true;
             }
@@ -158,80 +126,74 @@ namespace FS2020PlanePath
 
         private void SetupEvents()
         {
-            try
-            {
-                simConnect.OnRecvOpen += new SimConnect.RecvOpenEventHandler(SimConnect_OnRecvOpen);
-                simConnect.OnRecvQuit += new SimConnect.RecvQuitEventHandler(SimConnect_OnRecvQuit);
 
-                simConnect.OnRecvException += new SimConnect.RecvExceptionEventHandler(SimConnect_OnRecvException);
+            simConnect.OnRecvOpen += new SimConnect.RecvOpenEventHandler(SimConnect_OnRecvOpen);
+            simConnect.OnRecvQuit += new SimConnect.RecvQuitEventHandler(SimConnect_OnRecvQuit);
 
-                // for future use
-                /*                SimConnect.OnRecvEvent += new SimConnect.RecvEventEventHandler(SimConnect_OnRecvEvent);
-                                SimConnect.OnRecvEventFilename += new SimConnect.RecvEventFilenameEventHandler(SimConnect_OnRecvFilename);*/
+            simConnect.OnRecvException += new SimConnect.RecvExceptionEventHandler(SimConnect_OnRecvException);
 
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Plane Latitude", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Plane Longitude", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Plane Altitude", "feet", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Plane Alt Above Ground", "feet", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "General Eng RPM:1", "rpm", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "General Eng RPM:2", "rpm", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "General Eng RPM:3", "rpm", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "General Eng RPM:4", "rpm", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Light States", "mask", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Ground Velocity", "knots", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Plane Pitch Degrees", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Plane Bank Degrees", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Plane Heading Degrees True", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Plane Heading Degrees Magnetic", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Airspeed Indicated", "knots", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Airspeed True", "knots", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Vertical Speed", "feet per minute", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Heading Indicator", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Flaps Handle Index", "number", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Spoilers Handle Position", "position", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Gear Handle Position", "bool", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Ambient Wind Velocity", "knots", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Ambient Wind Direction", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Ambient Temperature", "celsius", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Stall Warning", "bool", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Overspeed Warning", "bool", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Is Gear Retractable", "bool", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Spoiler Available", "bool", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS WP Prev Lat", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS WP Prev Lon", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS WP Prev ALT", "feet", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS WP Prev ID", null, SIMCONNECT_DATATYPE.STRING256, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS WP Next Lat", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS WP Next Lon", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS WP Next ALT", "feet", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS WP NEXT ID", null, SIMCONNECT_DATATYPE.STRING256, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS Flight Plan WP Index", "number", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS Flight Plan WP Count", "number", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
-                simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Sim On Ground", "bool", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            // for future use
+            /*                SimConnect.OnRecvEvent += new SimConnect.RecvEventEventHandler(SimConnect_OnRecvEvent);
+                            SimConnect.OnRecvEventFilename += new SimConnect.RecvEventFilenameEventHandler(SimConnect_OnRecvFilename);*/
 
-                simConnect.AddToDataDefinition(DEFINITIONS.SimEnvironmentDataStructure, "TITLE", null, SIMCONNECT_DATATYPE.STRING256, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Plane Latitude", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Plane Longitude", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Plane Altitude", "feet", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Plane Alt Above Ground", "feet", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "General Eng RPM:1", "rpm", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "General Eng RPM:2", "rpm", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "General Eng RPM:3", "rpm", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "General Eng RPM:4", "rpm", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Light States", "mask", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Ground Velocity", "knots", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Plane Pitch Degrees", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Plane Bank Degrees", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Plane Heading Degrees True", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Plane Heading Degrees Magnetic", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Airspeed Indicated", "knots", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Airspeed True", "knots", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Vertical Speed", "feet per minute", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Heading Indicator", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Flaps Handle Index", "number", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Spoilers Handle Position", "position", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Gear Handle Position", "bool", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Ambient Wind Velocity", "knots", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Ambient Wind Direction", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Ambient Temperature", "celsius", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Stall Warning", "bool", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Overspeed Warning", "bool", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Is Gear Retractable", "bool", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Spoiler Available", "bool", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS WP Prev Lat", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS WP Prev Lon", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS WP Prev ALT", "feet", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS WP Prev ID", null, SIMCONNECT_DATATYPE.STRING256, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS WP Next Lat", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS WP Next Lon", "degrees", SIMCONNECT_DATATYPE.FLOAT64, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS WP Next ALT", "feet", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS WP NEXT ID", null, SIMCONNECT_DATATYPE.STRING256, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS Flight Plan WP Index", "number", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "GPS Flight Plan WP Count", "number", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimPlaneDataStructure, "Sim On Ground", "bool", SIMCONNECT_DATATYPE.INT32, 0.0f, SimConnect.SIMCONNECT_UNUSED);
 
-                // IMPORTANT: register it with the simconnect managed wrapper marshaller
-                // if you skip this step, you will only receive a uint in the .dwData field.
-                simConnect.RegisterDataDefineStruct<SimPlaneDataStructure>(DEFINITIONS.SimPlaneDataStructure);
-                simConnect.RegisterDataDefineStruct<SimEnvironmentDataStructure>(DEFINITIONS.SimEnvironmentDataStructure);
+            simConnect.AddToDataDefinition(DEFINITIONS.SimEnvironmentDataStructure, "TITLE", null, SIMCONNECT_DATATYPE.STRING256, 0.0f, SimConnect.SIMCONNECT_UNUSED);
 
-                simConnect.OnRecvSimobjectData += new SimConnect.RecvSimobjectDataEventHandler(SimConnect_OnRecvSimobjectData);
-                simConnect.RequestDataOnSimObject(DATA_REQUESTS.DataRequest, DEFINITIONS.SimPlaneDataStructure, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD.SECOND, SIMCONNECT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0);
+            // IMPORTANT: register it with the simconnect managed wrapper marshaller
+            // if you skip this step, you will only receive a uint in the .dwData field.
+            simConnect.RegisterDataDefineStruct<SimPlaneDataStructure>(DEFINITIONS.SimPlaneDataStructure);
+            simConnect.RegisterDataDefineStruct<SimEnvironmentDataStructure>(DEFINITIONS.SimEnvironmentDataStructure);
 
-                // for future use
-                /*              simConnect.SubscribeToSystemEvent(EVENTS.FlightPlanActivated, "FlightPlanActivated");
-                                simConnect.SubscribeToSystemEvent(EVENTS.FlightPlanDeactivated, "FlightPlanDeactivated");
-                                simConnect.SubscribeToSystemEvent(EVENTS.SimStop, "SimStop");
-                                simConnect.SubscribeToSystemEvent(EVENTS.SimStart, "SimStart");
-                                simConnect.MapClientEventToSimEvent(EVENTS.FlightPlanActivated, "");
-                                SimConnect.SetSystemEventState(EVENTS.FlightPlanActivated, SIMCONNECT_STATE.OFF);
-                 */
-            }
-            catch (COMException ex)
-            {
-                exceptionHandler.Invoke(ex);
-            }
+            simConnect.OnRecvSimobjectData += new SimConnect.RecvSimobjectDataEventHandler(SimConnect_OnRecvSimobjectData);
+            simConnect.RequestDataOnSimObject(DATA_REQUESTS.DataRequest, DEFINITIONS.SimPlaneDataStructure, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD.SECOND, SIMCONNECT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0);
+
+            // for future use
+            /*              simConnect.SubscribeToSystemEvent(EVENTS.FlightPlanActivated, "FlightPlanActivated");
+                            simConnect.SubscribeToSystemEvent(EVENTS.FlightPlanDeactivated, "FlightPlanDeactivated");
+                            simConnect.SubscribeToSystemEvent(EVENTS.SimStop, "SimStop");
+                            simConnect.SubscribeToSystemEvent(EVENTS.SimStart, "SimStart");
+                            simConnect.MapClientEventToSimEvent(EVENTS.FlightPlanActivated, "");
+                            SimConnect.SetSystemEventState(EVENTS.FlightPlanActivated, SIMCONNECT_STATE.OFF);
+                */
         }
 
         // don't currently do anything with receiving exception event
@@ -299,11 +261,11 @@ namespace FS2020PlanePath
             switch ((DATA_REQUESTS) data.dwRequestID)
             {
                 case DATA_REQUESTS.DataRequest:
-                    simPlaneDataHandler.Invoke((SimPlaneDataStructure) data.dwData[0]);
+                    flightDataHandler.Invoke(FlightData((SimPlaneDataStructure) data.dwData[0]));
                     break;
 
                 case DATA_REQUESTS.SimEnvironmentReq:
-                    simPlaneEnvironmentChangeHandler.Invoke((SimEnvironmentDataStructure) data.dwData[0]);
+                    environmentDataHandler.Invoke(EnvironmentData((SimEnvironmentDataStructure) data.dwData[0]));
                     break;
 
                 default:
@@ -316,21 +278,15 @@ namespace FS2020PlanePath
             simConnect.RequestDataOnSimObject(DATA_REQUESTS.SimEnvironmentReq, DEFINITIONS.SimEnvironmentDataStructure, SimConnect.SIMCONNECT_OBJECT_ID_USER, SIMCONNECT_PERIOD.ONCE, SIMCONNECT_DATA_REQUEST_FLAG.DEFAULT, 0, 0, 0);
         }
 
-        public bool Connect()
+        public void Connect()
         {
             if (simConnect != null)
-                return false;
+            {
+                CloseConnection();
+            }
 
-            try
-            {
-                simConnect = new SimConnect("MainPage", parentControl.Handle, WM_USER_SIMCONNECT, null, 0);
-                return true;
-            }
-            catch (COMException ex)
-            {
-                exceptionHandler.Invoke(ex);
-                return false;
-            }
+            simConnect = new SimConnect("MainPage", parentControl.Handle, WM_USER_SIMCONNECT, null, 0);
+            SetupEvents();
         }
 
 /*        public void Disconnect()
@@ -349,6 +305,61 @@ namespace FS2020PlanePath
             return simConnect != default(SimConnect);
         }
 
+
+        private static EnvironmentDataStructure EnvironmentData(SimEnvironmentDataStructure newSimConnectEnvironmentStructure)
+        {
+            return new EnvironmentDataStructure
+            {
+                title = newSimConnectEnvironmentStructure.title
+            };
+        }
+
+        private static FlightDataStructure FlightData(SimPlaneDataStructure newSimConnectData)
+        {
+            return new FlightDataStructure
+            {
+                latitude = newSimConnectData.latitude,
+                longitude = newSimConnectData.longitude,
+                altitude = newSimConnectData.altitude,
+                altitude_above_ground = newSimConnectData.altitude_above_ground,
+                engine1rpm = newSimConnectData.engine1rpm,
+                engine2rpm = newSimConnectData.engine2rpm,
+                engine3rpm = newSimConnectData.engine3rpm,
+                engine4rpm = newSimConnectData.engine4rpm,
+                lightsmask = newSimConnectData.lightsmask,
+                ground_velocity = newSimConnectData.ground_velocity,
+                plane_pitch = newSimConnectData.plane_pitch,
+                plane_bank = newSimConnectData.plane_bank,
+                plane_heading_true = newSimConnectData.plane_heading_true,
+                plane_heading_magnetic = newSimConnectData.plane_heading_magnetic,
+                plane_airspeed_indicated = newSimConnectData.plane_airspeed_indicated,
+                airspeed_true = newSimConnectData.airspeed_true,
+                vertical_speed = newSimConnectData.vertical_speed,
+                heading_indicator = newSimConnectData.heading_indicator,
+                flaps_handle_position = newSimConnectData.flaps_handle_position,
+                spoilers_handle_position = newSimConnectData.spoilers_handle_position,
+                gear_handle_position = newSimConnectData.gear_handle_position,
+                ambient_wind_velocity = newSimConnectData.ambient_wind_velocity,
+                ambient_wind_direction = newSimConnectData.ambient_wind_direction,
+                ambient_temperature = newSimConnectData.ambient_temperature,
+                stall_warning = newSimConnectData.stall_warning,
+                overspeed_warning = newSimConnectData.overspeed_warning,
+                is_gear_retractable = newSimConnectData.is_gear_retractable,
+                spoiler_available = newSimConnectData.spoiler_available,
+                gps_wp_prev_latitude = newSimConnectData.gps_wp_prev_latitude,
+                gps_wp_prev_longitude = newSimConnectData.gps_wp_prev_longitude,
+                gps_wp_prev_altitude = newSimConnectData.gps_wp_prev_altitude,
+                gps_wp_prev_id = newSimConnectData.gps_wp_prev_id,
+                gps_wp_next_latitude = newSimConnectData.gps_wp_next_latitude,
+                gps_wp_next_longitude = newSimConnectData.gps_wp_next_longitude,
+                gps_wp_next_altitude = newSimConnectData.gps_wp_next_altitude,
+                gps_wp_next_id = newSimConnectData.gps_wp_next_id,
+                gps_flight_plan_wp_index = newSimConnectData.gps_flight_plan_wp_index,
+                gps_flight_plan_wp_count = newSimConnectData.gps_flight_plan_wp_count,
+                sim_on_ground = newSimConnectData.sim_on_ground
+            };
+        }
+
     }
 
- }
+}

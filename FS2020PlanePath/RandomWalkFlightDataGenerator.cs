@@ -9,13 +9,6 @@ namespace FS2020PlanePath
 
         public override string Name => "RandomWalk";
 
-        public override void Reset()
-        {
-            // TODO - copy (rather than *REFERENCE!*) the initial sample
-            currentSample = INITIAL_SAMPLE; 
-            base.Reset();
-        }
-
         internal override List<FlightPathData> GetFlightPathSince(long earliestTimestamp)
         {
             List<FlightPathData> flightPath = new List<FlightPathData>();
@@ -69,9 +62,7 @@ namespace FS2020PlanePath
             return flightPath;
         }
 
-        private FlightPathData currentSample;
-
-        private static readonly FlightPathData INITIAL_SAMPLE = new FlightPathData
+        private FlightPathData currentSample = new FlightPathData
         {
             timestamp = DateTime.Now.Ticks,
             longitude = -121.6601805,

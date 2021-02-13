@@ -10,12 +10,6 @@ namespace FS2020PlanePath
 
         public abstract string Name { get; }
 
-        public virtual void Reset()
-        {
-            Console.WriteLine("reset to time 0");
-            startingTimestamp = 0;
-        }
-
         public IEnumerator<FlightPathData> NextFlightPathSegment()
         {
             long initialTimestamp = startingTimestamp;

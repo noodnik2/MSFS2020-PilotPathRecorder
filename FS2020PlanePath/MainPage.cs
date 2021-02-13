@@ -25,6 +25,7 @@ namespace FS2020PlanePath
 
         //const string sourceRepo = "SAHorowitz/MSFS2020-PilotPathRecorder";
         const string sourceRepo = "noodnik2/MSFS2020-PilotPathRecorder";
+        const string EXPORT_KMLFILE_CAPTION = "Export KML File";
 
         bool bLoggingEnabled = false;
         FlightDataConnector flightDataConnector;
@@ -50,7 +51,7 @@ namespace FS2020PlanePath
             {
                 KmlCameraParameterValues newCameraParameterValues = scKmlAdapter.KmlCameraValues.ShallowCopy();
                 newCameraParameterValues.seq = fp.timestamp;
-                newCameraParameterValues.altitude = fp.altitude;
+                newCameraParameterValues.altitude = (fp.altitude / 3.28084) + 0.5;
                 newCameraParameterValues.longitude = fp.longitude;
                 newCameraParameterValues.latitude = fp.latitude;
                 newCameraParameterValues.tilt = fp.plane_pitch;
@@ -104,48 +105,81 @@ namespace FS2020PlanePath
             scKmlAdapter = new ScKmlAdapter(kmlCameraParameterValues);
             liveCamServer = new LiveCamServer(scKmlAdapter, liveCamRegistry);
 
-            flightDataConnector = new FlightDataConnector(
-                FlightDataConnector.OperationalMode.SimConnect,
-                this,
-                flightData => HandleFlightData(flightData),
-                environmentData => HandleEnvironmentData(environmentData.title),
-                e => UpdateConnectionDialogStatus($"Error: {e.Message}"),
-                FlightPathDB,
-                () => GetFlightReplayGeneratorContext()
-            );
+            flightDataConnector = CreateFlightDataConnector();
 
+            UpdateLoggingEnabledState(false);
         }
 
-        private ReplayFlightDataGenerator.Context GetFlightReplayGeneratorContext()
+        private FlightDataConnector CreateFlightDataConnector()
         {
-            ListView.SelectedListViewItemCollection selectedItems = FlightPickerLV.SelectedItems;
-            if (selectedItems.Count != 1)
+            Action<FlightDataStructure> flightDataHandler = flightData => HandleFlightData(flightData);
+            Action<EnvironmentDataStructure> environmentDataHandler = environmentData => HandleEnvironmentData(environmentData.title);
+            FlightDataConnector flightDataConnector = (
+                new FlightDataConnectorBuilder()
+                .inMode(simConnectRB.Text)
+                .withConnectorFactory(
+                    simConnectRB.Text,
+                    () => new SimConnectFlightDataConnector(
+                        this,
+                        flightDataHandler,
+                        environmentDataHandler
+                    )
+                )
+                .withConnectorFactory(
+                    replayRB.Text,
+                    () => new GeneratedFlightDataConnector(
+                        this,
+                        flightDataHandler,
+                        environmentDataHandler,
+                        new ReplayFlightDataGenerator(FlightPathDB, GetFlightReplayGeneratorContext())
+                    )
+                )
+                .withConnectorFactory(
+                    randomWalkRB.Text,
+                    () => new GeneratedFlightDataConnector(
+                        this,
+                        flightDataHandler,
+                        environmentDataHandler,
+                        new RandomWalkFlightDataGenerator()
+                    )
+                )
+                .build()
+            );
+            return flightDataConnector;
+        }
+
+        private (int flightNo, string flightName, int segmentDurationSecs) GetFlightReplayGeneratorContext()
+        {
+            const string FLIGHT_TO_REPLAY_CAPTION = "Flight To Replay";
+
+            ListViewItem listViewItem;
+            if (!getSelectedFlight(out listViewItem, FLIGHT_TO_REPLAY_CAPTION))
             {
-                Console.WriteLine($"0 since count({selectedItems.Count})");
-                throw new Exception($"{selectedItems.Count} flight(s) selected");
+                throw new Exception($"no flight is selected");
             }
 
-            ListViewItem listViewItem = selectedItems[0];
             int segmentDurationSecs;
             try
             {
                 segmentDurationSecs = Convert.ToInt32(ThresholdLogWriteFreqTB.Text);
             } catch(Exception e)
             {
-                throw new Exception($"Invalid threshold write frequency: {e.Message}");
+                UserDialogUtils.displayMessage(FLIGHT_TO_REPLAY_CAPTION, "Please set a threshold frequency");
+                throw new Exception($"no threshold frequency: {e.Message}");
             }
 
             if (segmentDurationSecs <= 0)
             {
                 // TODO fix this arbitrary correction
+                Console.WriteLine($"fallback to 1 from from segmentDurationSecs = {segmentDurationSecs}");
                 segmentDurationSecs = 1;
             }
 
-            return new ReplayFlightDataGenerator.Context
-            {
-                flightNo = (int) listViewItem.Tag,
-                segmentDurationSecs = segmentDurationSecs
-            };
+            return (
+                (int) listViewItem.Tag,
+                $"{listViewItem.SubItems[1].Text} from {listViewItem.SubItems[0].Text}", 
+                segmentDurationSecs
+            );
         }
 
         private void LogWriteFreqTB_KeyPress(object sender, KeyPressEventArgs e)
@@ -160,10 +194,10 @@ namespace FS2020PlanePath
         private void LogFolderBrowser_Click(object sender, EventArgs e)
         {
             FolderSelectDialog FolderSelectDialog1 = new FolderSelectDialog();
-
-            // Show the FolderBrowserDialog.
             if (FolderSelectDialog1.Show(Handle))
+            {
                 KMLFilePathTBRO.Text = FolderSelectDialog1.FileName;
+            }
         }
 
         private void MainPage_Shown(object sender, EventArgs e)
@@ -174,67 +208,75 @@ namespace FS2020PlanePath
             if (sAppLatestVersion.Equals(Program.sAppVersion) == false)
                 if (MessageBox.Show("There is a newer version of the application available. Do you wish to download it now?", "New Version Available", MessageBoxButtons.YesNo) == DialogResult.Yes)
                     Process.Start($"https://github.com/{sourceRepo}");
-            AttemptSimConnection(FlightDataConnector.OperationalMode.SimConnect);
+            AttemptSimConnection(simConnectRB.Text);
+            StartLoggingBtn.Enabled = true;
             nCurrentFlightID = 0;
             bStartedLoggingDueToSpeed = false;
             bStoppedLoggingDueToSpeed = true;
         }
 
-        private void AttemptSimConnection(FlightDataConnector.OperationalMode operationalMode)
+        private void AttemptSimConnection(string operationalMode)
         {
-            flightDataConnector.Mode = operationalMode;
-            UpdateConnectionDialogStatus(null);
-            if (flightDataConnector.Connect() == true)
-            {
-                flightDataConnector.Initialize();
-                UpdateConnectionDialogStatus(null);
-            }
+            flightDataConnector.SetMode(operationalMode);
+            flightDataConnector.Connect();
+            UpdateConnectionDialogStatus();
         }
 
         protected override void DefWndProc(ref Message m)
         {
-            if (flightDataConnector.HandleWindowMessage(ref m))
+            if (!flightDataConnector.HandleWindowMessage(ref m))
             {
-                return;
+                base.DefWndProc(ref m);
             }
-            base.DefWndProc(ref m);
         }
 
-        private void StartLoggingBtn_Click(object sender, EventArgs e)
+        private void ToggleLoggingBtn_Click(object sender, EventArgs e)
         {
             // set the last time a record was written to mintime
             dtLastDataRecord = DateTime.MinValue;
+            UpdateLoggingEnabledState(!bLoggingEnabled);
+            loggingStatusLB.Text = bLoggingEnabled ? "Logging active" : "Logging inactive";
+        }
 
-            // sim is not connected try one time
-            if (flightDataConnector.IsSimConnected() == false)
-                AttemptSimConnection(FlightDataConnector.OperationalMode.SimConnect);
+        private void TogglePauseLoggingBtn_Click(object sender, EventArgs e)
+        {
+            UpdateLoggingPausedState(bLoggingEnabled);
+            loggingStatusLB.Text = bLoggingEnabled ? "Logging continued" : "Logging paused";
+        }
 
-            // if sim is still not connected then abort logging
-            if (flightDataConnector.IsSimConnected() == false)
-                return;
+        private void StopLoggingAction()
+        {
+            FlightPathDB.WriteFlightPlan(nCurrentFlightID, flightPlan.flight_waypoints);
 
-            if (flightDataConnector.IsSimInitialized() == true)
-                bLoggingEnabled = true;
+            LoadFlightList();
+            if (Program.bLogErrorsWritten == true)
+                ErrorTBRO.Text = "Errors detected.  Please see " + Program.ErrorLogFile() + " for more details";
             else
-                SimConnectStatusLabel.Text = "Unable to connect to FS2020";
+                ErrorTBRO.Text = "";
 
-            // set buttons accordingly based on logging situation
-            if (bLoggingEnabled == true)
+            nCurrentFlightID = 0;
+            bStartedLoggingDueToSpeed = false;
+        }
+
+        void UpdateLoggingEnabledState(bool enableFlag)
+        {
+            if (bLoggingEnabled && !enableFlag)
             {
-                // visible textboxes and labels around log file name and disable start logging button and enable stop logging button
-                StartLoggingBtn.Enabled = false;
-                PauseLoggingBtn.Enabled = true;
-                StopLoggingBtn.Enabled = true;
-                ContinueLogginBtn.Enabled = false;
+                // transitioning from enabled to disabled: close out the log
+                bStoppedLoggingDueToSpeed = false;
+                StopLoggingAction();
             }
-            else
-            {
-                // visible textboxes and labels around log file name and disable start logging button and enable stop logging button
-                StartLoggingBtn.Enabled = true;
-                PauseLoggingBtn.Enabled = false;
-                StopLoggingBtn.Enabled = false;
-                ContinueLogginBtn.Enabled = false;
-            }
+
+            StartLoggingBtn.Text = enableFlag ? "Stop" : "Start";
+            UpdateLoggingPausedState(false);
+            bLoggingEnabled = enableFlag;
+            PauseLoggingBtn.Enabled = enableFlag;
+        }
+
+        void UpdateLoggingPausedState(bool pausedFlag)
+        {
+            PauseLoggingBtn.Text = pausedFlag ? "Continue" : "Pause";
+            bLoggingEnabled = !pausedFlag;
         }
 
         // function is called from the retrieval of information from the simconnect and in this case stores it in the database based 
@@ -258,7 +300,9 @@ namespace FS2020PlanePath
                     {
                         // if ground speed is < LoggingThresholdGroundVelTB and user wanted automatic logging and logging was on due to speed then turn it off
                         if (bStartedLoggingDueToSpeed == true)
-                            StopLoggingAction();
+                        {
+                            UpdateLoggingEnabledState(false);
+                        }
                     }
                     bStoppedLoggingDueToSpeed = true;
                 }
@@ -311,29 +355,42 @@ namespace FS2020PlanePath
             }
         }
 
-        // function that writes out KML file based on the flight chosen by the user
-        private void CreateKMLButton_Click(object sender, EventArgs e)
+        private bool getSelectedFlight(out ListViewItem listViewItem, string caption)
+        {
+            if (FlightPickerLV.SelectedItems.Count != 1)
+            {
+                UserDialogUtils.displayMessage(caption, "Please choose a flight.");
+                listViewItem = default(ListViewItem);
+                return false;
+            }
+            listViewItem = FlightPickerLV.SelectedItems[0];
+            return true;
+        }
+
+        /// <returns>name of the Kml file created from the log</returns>
+        private bool createKmlFileFromLog(out string kmlFileName)
         {
             int nCount;
             int nFlightID;
             string sfilename;
             long lprevTimestamp;
+            ListViewItem selectedFlight;
 
-            bLoggingEnabled = false;
+            kmlFileName = default(string);
+            UpdateLoggingEnabledState(false);
 
-            if (FlightPickerLV.SelectedItems.Count < 1)
+            if (!getSelectedFlight(out selectedFlight, EXPORT_KMLFILE_CAPTION))
             {
-                MessageBox.Show("Please choose a flight before exporting.", "Export KML File");
-                return;
+                return false;
             }
+            nFlightID = (int) selectedFlight.Tag;
+
 
             if (KMLFilePathTBRO.Text.Length == 0)
             {
-                MessageBox.Show("Please choose a folder location before exporting.", "Export KML File");
-                return;
+                UserDialogUtils.displayMessage(EXPORT_KMLFILE_CAPTION, "Please choose a folder location.");
+                return false;
             }
-
-            nFlightID = (int)FlightPickerLV.SelectedItems[0].Tag;
 
             // This is the root element of the file
             var kml = new Kml();
@@ -645,55 +702,31 @@ namespace FS2020PlanePath
             {
                 kmlfile.Save(stream);
             }
-            MessageBox.Show(String.Format("Flight successfully exported to {0}", sfilename), "Export KML File");
+            kmlFileName = sfilename;
+            return true;
         }
 
-        // stop logging disconnects simconnect, sets buttons correctly and reloads flight list 
-        // since a new flight was made
-        private void StopLoggingBtn_Click(object sender, EventArgs e)
+        // function that writes out KML file based on the flight chosen by the user
+        private void CreateKMLButton_Click(object sender, EventArgs e)
         {
-            bStoppedLoggingDueToSpeed = false;
-            StopLoggingAction();
+            string exportedKmlFilename;
+            if (createKmlFileFromLog(out exportedKmlFilename))
+            {
+                UserDialogUtils.displayMessage(
+                    EXPORT_KMLFILE_CAPTION, 
+                    String.Format($"Flight successfully exported to {exportedKmlFilename}")
+                );
+            }
         }
 
-        private void StopLoggingAction()
+        // function that writes out and opens the KML file based on the flight chosen by the user
+        private void LaunchKmlFileBtn_Handler(object sender, EventArgs e)
         {
-            bLoggingEnabled = false;
-            FlightPathDB.WriteFlightPlan(nCurrentFlightID, flightPlan.flight_waypoints);
-
-            StartLoggingBtn.Enabled = true;
-            PauseLoggingBtn.Enabled = false;
-            StopLoggingBtn.Enabled = false;
-            ContinueLogginBtn.Enabled = false;
-            LoadFlightList();
-            if (Program.bLogErrorsWritten == true)
-                ErrorTBRO.Text = "Errors detected.  Please see " + Program.ErrorLogFile() + " for more details";
-            else
-                ErrorTBRO.Text = "";
-
-            nCurrentFlightID = 0;
-            bStartedLoggingDueToSpeed = false;
-        }
-
-        // pause and continue logging are as simple as button visibility and setting logging flag
-        private void PauseLoggingBtn_Click(object sender, EventArgs e)
-        {
-            bLoggingEnabled = false;
-
-            StartLoggingBtn.Enabled = false;
-            PauseLoggingBtn.Enabled = false;
-            StopLoggingBtn.Enabled = true;
-            ContinueLogginBtn.Enabled = true;
-        }
-
-        private void ContinueLogginBtn_Click(object sender, EventArgs e)
-        {
-            bLoggingEnabled = true;
-
-            StartLoggingBtn.Enabled = false;
-            PauseLoggingBtn.Enabled = true;
-            StopLoggingBtn.Enabled = true;
-            ContinueLogginBtn.Enabled = false;
+            string exportedKmlFilename;
+            if (createKmlFileFromLog(out exportedKmlFilename))
+            {
+                LaunchFile(exportedKmlFilename, 3000);
+            }
         }
 
         private void LoadLiveCams() {
@@ -947,31 +980,43 @@ namespace FS2020PlanePath
                 return;
             }
 
-            Console.WriteLine($"Installing Link via({linkFileName})");
+            LaunchFile(linkFileName, 3000);
+
+        }
+
+        private void LaunchFile(string launchFilename, int timeoutMillis)
+        {
+            Console.WriteLine($"launching({launchFilename})");
             try
             {
-                using (Process installLinkProcess = Process.Start(linkFileName))
+                using (Process installLinkProcess = Process.Start(launchFilename))
                 {
-                    if (!installLinkProcess.WaitForExit(3000))
+                    if (!installLinkProcess.WaitForExit(timeoutMillis))
                     {
-                        //displayError("Timeout Waiting for Link Installation", "Is Google Earth Properly Installed?");
-                        // NOTE: this seems to happen always when KML handling application (e.g., Google Earth) is not already running (i.e., is started here)
-                        Console.WriteLine($"NOTE: timeout waiting for application started to handle({linkFileName})");
-                    } else
+                        // NOTE: this seems to happen always when handling application (e.g., Google Earth) is not already running
+                        Console.WriteLine($"NOTE: timeout waiting for '{launchFilename}' to launch");
+                    }
+                    else
                     {
                         int exitCode = installLinkProcess.ExitCode;
                         if (exitCode != 0)
                         {
                             Console.WriteLine($"exitCode({exitCode})");
-                            UserDialogUtils.displayError("Unexpected Result while Installing Network Link", $"Exit Code {exitCode}");
+                            UserDialogUtils.displayError(
+                                "Launch Error",
+                                $"launching '{launchFilename}' produced exit code '{exitCode}'"
+                            );
                         }
                     }
                 }
-            } catch(Exception ilpe)
-            {
-                UserDialogUtils.displayError("Error Installing Network Link", ilpe.Message);
             }
-
+            catch (Exception ilpe)
+            {
+                UserDialogUtils.displayError(
+                    "Launch Error",
+                    $"launching '{launchFilename}' produced exception '{ilpe.Message}'"
+                );
+            }
         }
 
         private void ValidateNetworkLink(object sender, CancelEventArgs e)
@@ -982,7 +1027,10 @@ namespace FS2020PlanePath
                 new Uri(liveCamUrl);
             } catch(UriFormatException ufe)
             {
-                UserDialogUtils.displayError("Invalid Network Link", malformedUriErrorMessage(liveCamUrl, ufe));
+                UserDialogUtils.displayError(
+                    "Invalid Network Link", 
+                    malformedUriErrorMessage(liveCamUrl, ufe)
+                );
             }            
         }
 
@@ -998,7 +1046,12 @@ namespace FS2020PlanePath
             
             if (!liveCamRegistry.IsDefaultDefinition(liveCam, alias))
             {
-                if (!UserDialogUtils.obtainConfirmation("Confirm Reset", $"Discard changes for:\n{liveCamUrl}"))
+                if (
+                    !UserDialogUtils.obtainConfirmation(
+                        "Confirm Reset", 
+                        $"Discard changes for:\n{liveCamUrl}"
+                    )
+                )
                 {
                     return;
                 }
@@ -1018,16 +1071,15 @@ namespace FS2020PlanePath
             if (button.Text == DISCONNECT_BUTTON_TEXT)
             {
                 flightDataConnector.CloseConnection();
-                UpdateConnectionDialogStatus(null);
+                UpdateConnectionDialogStatus();
                 return;
             }
             AttemptSimConnection(
-                operationalModeForConnectionTypeButton(
-                    connectionTypeGB
-                    .Controls
-                    .OfType<RadioButton>()
-                    .FirstOrDefault(r => r.Checked)
-                )
+                connectionTypeGB
+                .Controls
+                .OfType<RadioButton>()
+                .FirstOrDefault(r => r.Checked)
+                .Text
             );
         }
 
@@ -1035,14 +1087,13 @@ namespace FS2020PlanePath
         {
 
             RadioButton changedButton = (RadioButton) sender;
-            //Console.WriteLine($"button({changedButton.Name}) now({changedButton.Checked})");
 
-            FlightDataConnector.OperationalMode changedMode = operationalModeForConnectionTypeButton(changedButton);
+            string changedMode = changedButton.Text;
             if (changedButton.Checked)
             {
                 // set the new mode
-                flightDataConnector.Mode = changedMode;
-                UpdateConnectionDialogStatus(null);
+                flightDataConnector.SetMode(changedMode);
+                UpdateConnectionDialogStatus();
                 return;
             }
 
@@ -1063,35 +1114,28 @@ namespace FS2020PlanePath
                     return;
                 }
                 flightDataConnector.CloseConnection();
-                UpdateConnectionDialogStatus(null);
+                UpdateConnectionDialogStatus();
             }
 
         }
 
-        private void UpdateConnectionDialogStatus(string statusUpdate)
+        private void UpdateConnectionDialogStatus()
         {
             bool isConnected = flightDataConnector.IsSimConnected();
-            string connectionState = statusUpdate == default(string) ? isConnected ? "Connected" : "Not Connected" : statusUpdate;
+            string connectionState = isConnected ? "Connected" : "Not Connected";
+            if (flightDataConnector.Diagnostics.Length > 0)
+            {
+                connectionState = connectionState + $" ({string.Join(",", flightDataConnector.Diagnostics)})";
+            }
+
             SimConnectStatusLabel.Text = $"{flightDataConnector.Mode}: {connectionState}";
             RetrySimConnectionBtn.Text = isConnected ? DISCONNECT_BUTTON_TEXT : CONNECT_BUTTON_TEXT;
-            StartLoggingBtn.Enabled = isConnected;
+
+            toolTip1.SetToolTip(this.SimConnectStatusLabel, SimConnectStatusLabel.Text);
         }
 
         private const string CONNECT_BUTTON_TEXT = "Connect";
         private const string DISCONNECT_BUTTON_TEXT = "Disconnect";
-
-        private FlightDataConnector.OperationalMode operationalModeForConnectionTypeButton(RadioButton changedButton)
-        {
-            if (changedButton == randomWalkRB)
-            {
-                return FlightDataConnector.OperationalMode.RandomWalk;
-            }
-            if (changedButton == replayRB)
-            {
-                return FlightDataConnector.OperationalMode.Replay;
-            }
-            return FlightDataConnector.OperationalMode.SimConnect;
-        }
 
     }
 

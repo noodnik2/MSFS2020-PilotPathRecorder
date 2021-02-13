@@ -65,9 +65,12 @@
             this.LiveCameraKmlResetBT = new System.Windows.Forms.Button();
             this.LiveCameraHostPortCB = new System.Windows.Forms.ComboBox();
             this.simConnectRB = new System.Windows.Forms.RadioButton();
-            this.connectionTypeGB = new System.Windows.Forms.GroupBox();
             this.replayRB = new System.Windows.Forms.RadioButton();
             this.randomWalkRB = new System.Windows.Forms.RadioButton();
+            this.loggingStatusLB = new System.Windows.Forms.Label();
+            this.connectionTypeGB = new System.Windows.Forms.GroupBox();
+            this.loggingLB = new System.Windows.Forms.Label();
+            this.launchKmlBT = new System.Windows.Forms.Button();
             this.connectionTypeGB.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -137,28 +140,29 @@
             this.SimConnetStatusTextBox.Size = new System.Drawing.Size(40, 13);
             this.SimConnetStatusTextBox.TabIndex = 0;
             this.SimConnetStatusTextBox.Text = "Status:";
+            this.toolTip1.SetToolTip(this.SimConnetStatusTextBox, "Text to the right shows the status of the connection to the selected source of fl" +
+        "ight data");
             // 
             // StartLoggingBtn
             // 
             this.StartLoggingBtn.Enabled = false;
-            this.StartLoggingBtn.Location = new System.Drawing.Point(13, 184);
+            this.StartLoggingBtn.Location = new System.Drawing.Point(73, 184);
             this.StartLoggingBtn.Name = "StartLoggingBtn";
-            this.StartLoggingBtn.Size = new System.Drawing.Size(98, 23);
+            this.StartLoggingBtn.Size = new System.Drawing.Size(58, 23);
             this.StartLoggingBtn.TabIndex = 11;
-            this.StartLoggingBtn.Text = "Start Logging";
+            this.StartLoggingBtn.Text = "SL";
             this.StartLoggingBtn.UseVisualStyleBackColor = true;
-            this.StartLoggingBtn.Click += new System.EventHandler(this.StartLoggingBtn_Click);
+            this.StartLoggingBtn.Click += new System.EventHandler(this.ToggleLoggingBtn_Click);
             // 
             // StopLoggingBtn
             // 
             this.StopLoggingBtn.Enabled = false;
-            this.StopLoggingBtn.Location = new System.Drawing.Point(442, 184);
+            this.StopLoggingBtn.Location = new System.Drawing.Point(455, 135);
             this.StopLoggingBtn.Name = "StopLoggingBtn";
             this.StopLoggingBtn.Size = new System.Drawing.Size(98, 23);
             this.StopLoggingBtn.TabIndex = 14;
             this.StopLoggingBtn.Text = "Stop Logging";
             this.StopLoggingBtn.UseVisualStyleBackColor = true;
-            this.StopLoggingBtn.Click += new System.EventHandler(this.StopLoggingBtn_Click);
             // 
             // CreateKMLButton
             // 
@@ -173,24 +177,23 @@
             // PauseLoggingBtn
             // 
             this.PauseLoggingBtn.Enabled = false;
-            this.PauseLoggingBtn.Location = new System.Drawing.Point(156, 184);
+            this.PauseLoggingBtn.Location = new System.Drawing.Point(141, 184);
             this.PauseLoggingBtn.Name = "PauseLoggingBtn";
-            this.PauseLoggingBtn.Size = new System.Drawing.Size(98, 23);
+            this.PauseLoggingBtn.Size = new System.Drawing.Size(63, 23);
             this.PauseLoggingBtn.TabIndex = 12;
-            this.PauseLoggingBtn.Text = "Pause Logging";
+            this.PauseLoggingBtn.Text = "PL";
             this.PauseLoggingBtn.UseVisualStyleBackColor = true;
-            this.PauseLoggingBtn.Click += new System.EventHandler(this.PauseLoggingBtn_Click);
+            this.PauseLoggingBtn.Click += new System.EventHandler(this.TogglePauseLoggingBtn_Click);
             // 
             // ContinueLogginBtn
             // 
             this.ContinueLogginBtn.Enabled = false;
-            this.ContinueLogginBtn.Location = new System.Drawing.Point(299, 184);
+            this.ContinueLogginBtn.Location = new System.Drawing.Point(455, 106);
             this.ContinueLogginBtn.Name = "ContinueLogginBtn";
             this.ContinueLogginBtn.Size = new System.Drawing.Size(98, 23);
             this.ContinueLogginBtn.TabIndex = 13;
             this.ContinueLogginBtn.Text = "Continue Logging";
             this.ContinueLogginBtn.UseVisualStyleBackColor = true;
-            this.ContinueLogginBtn.Click += new System.EventHandler(this.ContinueLogginBtn_Click);
             // 
             // RetrySimConnectionBtn
             // 
@@ -271,7 +274,7 @@
             // 
             // DeleteFlight
             // 
-            this.DeleteFlight.Location = new System.Drawing.Point(284, 506);
+            this.DeleteFlight.Location = new System.Drawing.Point(387, 506);
             this.DeleteFlight.Name = "DeleteFlight";
             this.DeleteFlight.Size = new System.Drawing.Size(152, 23);
             this.DeleteFlight.TabIndex = 28;
@@ -322,6 +325,8 @@
             // 
             // ErrorTBRO
             // 
+            this.ErrorTBRO.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.ErrorTBRO.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.ErrorTBRO.Location = new System.Drawing.Point(13, 50);
             this.ErrorTBRO.Multiline = true;
@@ -418,18 +423,6 @@
             this.simConnectRB.UseVisualStyleBackColor = true;
             this.simConnectRB.CheckedChanged += new System.EventHandler(this.HandleConnectionTypeChangeEvent);
             // 
-            // connectionTypeGB
-            // 
-            this.connectionTypeGB.Controls.Add(this.replayRB);
-            this.connectionTypeGB.Controls.Add(this.randomWalkRB);
-            this.connectionTypeGB.Controls.Add(this.simConnectRB);
-            this.connectionTypeGB.Location = new System.Drawing.Point(299, 7);
-            this.connectionTypeGB.Name = "connectionTypeGB";
-            this.connectionTypeGB.Size = new System.Drawing.Size(250, 42);
-            this.connectionTypeGB.TabIndex = 35;
-            this.connectionTypeGB.TabStop = false;
-            this.connectionTypeGB.Text = "Connection Type:";
-            // 
             // replayRB
             // 
             this.replayRB.AutoSize = true;
@@ -454,11 +447,58 @@
             this.randomWalkRB.UseVisualStyleBackColor = true;
             this.randomWalkRB.CheckedChanged += new System.EventHandler(this.HandleConnectionTypeChangeEvent);
             // 
+            // loggingStatusLB
+            // 
+            this.loggingStatusLB.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.loggingStatusLB.AutoEllipsis = true;
+            this.loggingStatusLB.Location = new System.Drawing.Point(210, 178);
+            this.loggingStatusLB.Name = "loggingStatusLB";
+            this.loggingStatusLB.Size = new System.Drawing.Size(329, 37);
+            this.loggingStatusLB.TabIndex = 37;
+            this.loggingStatusLB.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.toolTip1.SetToolTip(this.loggingStatusLB, "Status of logging incoming flight data");
+            // 
+            // connectionTypeGB
+            // 
+            this.connectionTypeGB.Controls.Add(this.replayRB);
+            this.connectionTypeGB.Controls.Add(this.randomWalkRB);
+            this.connectionTypeGB.Controls.Add(this.simConnectRB);
+            this.connectionTypeGB.Location = new System.Drawing.Point(299, 7);
+            this.connectionTypeGB.Name = "connectionTypeGB";
+            this.connectionTypeGB.Size = new System.Drawing.Size(250, 42);
+            this.connectionTypeGB.TabIndex = 35;
+            this.connectionTypeGB.TabStop = false;
+            this.connectionTypeGB.Text = "Connection Type:";
+            // 
+            // loggingLB
+            // 
+            this.loggingLB.AutoSize = true;
+            this.loggingLB.Location = new System.Drawing.Point(12, 189);
+            this.loggingLB.Name = "loggingLB";
+            this.loggingLB.Size = new System.Drawing.Size(48, 13);
+            this.loggingLB.TabIndex = 36;
+            this.loggingLB.Text = "Logging:";
+            // 
+            // launchKmlBT
+            // 
+            this.launchKmlBT.Location = new System.Drawing.Point(256, 506);
+            this.launchKmlBT.Name = "launchKmlBT";
+            this.launchKmlBT.Size = new System.Drawing.Size(97, 23);
+            this.launchKmlBT.TabIndex = 38;
+            this.launchKmlBT.Text = "Launch KML File";
+            this.launchKmlBT.UseVisualStyleBackColor = true;
+            this.launchKmlBT.Click += new System.EventHandler(this.LaunchKmlFileBtn_Handler);
+            // 
             // MainPage
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(557, 547);
+            this.Controls.Add(this.launchKmlBT);
+            this.Controls.Add(this.loggingStatusLB);
+            this.Controls.Add(this.loggingLB);
             this.Controls.Add(this.connectionTypeGB);
             this.Controls.Add(this.LiveCameraHostPortCB);
             this.Controls.Add(this.LiveCameraKmlResetBT);
@@ -544,6 +584,9 @@
         private System.Windows.Forms.GroupBox connectionTypeGB;
         private System.Windows.Forms.RadioButton replayRB;
         private System.Windows.Forms.RadioButton randomWalkRB;
+        private System.Windows.Forms.Label loggingLB;
+        private System.Windows.Forms.Label loggingStatusLB;
+        private System.Windows.Forms.Button launchKmlBT;
     }
 }
 

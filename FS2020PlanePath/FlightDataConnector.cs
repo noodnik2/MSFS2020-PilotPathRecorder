@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows.Forms;
 
 namespace FS2020PlanePath
@@ -6,203 +7,147 @@ namespace FS2020PlanePath
 
     public interface IFlightDataConnector
     {
-        void GetSimEnvInfo();
         bool IsSimConnected();
-        bool Connect();
-        void CloseConnection();
-        bool IsSimInitialized();
-        void Initialize();
+        void Connect();
+        void GetSimEnvInfo();
         bool HandleWindowMessage(ref Message m);
+        void CloseConnection();
+    }
+
+    public class FlightDataConnectorBuilder
+    {
+        FlightDataConnector flightDataConnector = new FlightDataConnector();
+
+        public FlightDataConnectorBuilder inMode(string operationalMode)
+        {
+            flightDataConnector.SetMode(operationalMode);
+            return this;
+        }
+
+        public FlightDataConnectorBuilder withConnectorFactory(string name, Func<IFlightDataConnector> connectorFactory)
+        {
+            flightDataConnector.AddConnectorFactory(name, connectorFactory);
+            return this;
+        }
+
+        public FlightDataConnector build()
+        {
+            return flightDataConnector;
+        }
+
     }
 
     public class FlightDataConnector : IFlightDataConnector
     {
 
-        internal FlightDataConnector(
-            OperationalMode operationalMode,
-            Control parentControl,
-            Action<FlightDataStructure> interfacePlaneDataHandler,
-            Action<EnvironmentDataStructure> interfaceEnvironmentDataHandler,
-            Action<Exception> exceptionHandler,
-            FS2020_SQLLiteDB dbAccessor,
-            Func<ReplayFlightDataGenerator.Context> replayContextSupplier
-        )
+        private Dictionary<string, Func<IFlightDataConnector>> ConnectorRegistry { get; } = new Dictionary<string, Func<IFlightDataConnector>>();
+
+        public void AddConnectorFactory(string name, Func<IFlightDataConnector> connectorFactory)
         {
-            simConnectConnector = new SimConnectFlightDataConnector(
-                parentControl,
-                simConnectData => interfacePlaneDataHandler.Invoke(
-                    FlightData(simConnectData)
-                ),
-                simConnectEnvironmentData => interfaceEnvironmentDataHandler.Invoke(
-                    EnvironmentData(simConnectEnvironmentData)
-                ),
-                exceptionHandler
-            );
-            randomWalkConnector = new GeneratedFlightDataConnector(
-                parentControl,
-                interfacePlaneDataHandler,
-                interfaceEnvironmentDataHandler,
-                exceptionHandler,
-                new RandomWalkFlightDataGenerator()
-            );
-            replayConnector = new GeneratedFlightDataConnector(
-                parentControl,
-                interfacePlaneDataHandler,
-                interfaceEnvironmentDataHandler,
-                exceptionHandler,
-                new ReplayFlightDataGenerator(dbAccessor, replayContextSupplier)
-            );
-            this.operationalMode = operationalMode;
+            ConnectorRegistry[name] = connectorFactory;
         }
 
-        public OperationalMode Mode
+        public void SetMode(string operationalMode)
         {
-            get => operationalMode;
-            set
+            if (IsSimConnected())
             {
-                if (value == operationalMode)
+                CloseConnection();
+            }
+            Console.WriteLine($"setting operationalMode({operationalMode})");
+            this.operationalMode = operationalMode;
+            exceptionMessage = default(string);
+        }
+
+        public string Mode => operationalMode;
+
+        public string[] Diagnostics {
+            get
+            {
+                if (exceptionMessage != default(string))
                 {
-                    //Console.WriteLine($"call ignored; operational mode already({value})");
-                    return;
+                    return new string[] { exceptionMessage };
                 }
-                if (IsSimConnected())
-                {
-                    CloseConnection();
-                }
-                //Console.WriteLine($"setting operationalMode({value})");
-                operationalMode = value;
+                return new string[0];
             }
         }
 
-        public bool Connect()
+        public void Connect()
         {
-            //Console.WriteLine($"connecting({operationalMode})");
-            return DelegateConnector.Connect();
+            Console.WriteLine($"connecting({operationalMode})");
+
+            if (operationalMode == default(string) || !ConnectorRegistry.ContainsKey(operationalMode))
+            {
+                Console.WriteLine($"request to open in undefined operational mode '{operationalMode}' ignored");
+                return;
+            }
+
+            try
+            {
+                exceptionMessage = default(string);
+                delegateConnector = ConnectorRegistry[operationalMode].Invoke();
+                delegateConnector.Connect();
+            }
+            catch (Exception e)
+            {
+                exceptionMessage = $"connection error: {e.Message}";
+                CloseConnection();
+            }
+
         }
 
         public void CloseConnection()
         {
-            //Console.WriteLine($"disconnecting({operationalMode})");
-            DelegateConnector.CloseConnection();
-        }
+            Console.WriteLine($"disconnecting({operationalMode})");
+            try
+            {
+                if (IsSimConnected())
+                {
+                    delegateConnector.CloseConnection();
+                }
+            }
+            catch (Exception e)
+            {
+                exceptionMessage = $"disconnect error: {e.Message}";
+            }
 
-        public void Initialize()
-        {
-            //Console.WriteLine($"initializing({operationalMode})");
-            DelegateConnector.Initialize();
+            delegateConnector = default(IFlightDataConnector);
         }
 
         public bool IsSimConnected()
         {
-            return DelegateConnector.IsSimConnected();
-        }
-
-        public bool IsSimInitialized()
-        {
-            return DelegateConnector.IsSimInitialized();
+            return delegateConnector != default(IFlightDataConnector);
         }
 
         public void GetSimEnvInfo()
         {
-            DelegateConnector.GetSimEnvInfo();
+            try { 
+                if (IsSimConnected())
+                {
+                    delegateConnector.GetSimEnvInfo();
+                }
+            } catch(Exception e)
+            {
+                exceptionMessage = $"get env error: {e.Message}";
+            }
         }
 
         public bool HandleWindowMessage(ref Message m)
         {
-            return DelegateConnector.HandleWindowMessage(ref m);
-        }
-
-        public enum OperationalMode
-        {
-            SimConnect,
-            RandomWalk,
-            Replay
-        }
-
-        private IFlightDataConnector DelegateConnector {
-            get
+            try
             {
-                switch (operationalMode)
-                {
-
-                    case OperationalMode.SimConnect:
-                        return simConnectConnector;
-
-                    case OperationalMode.Replay:
-                        return replayConnector;
-
-                    case OperationalMode.RandomWalk:
-                        return randomWalkConnector;
-
-                    default:
-                        return default(IFlightDataConnector);
-                }
+                return IsSimConnected() && delegateConnector.HandleWindowMessage(ref m);
             }
-        }
-
-        private static EnvironmentDataStructure EnvironmentData(
-            SimConnectFlightDataConnector.SimEnvironmentDataStructure newSimConnectEnvironmentStructure
-        )
-        {
-            return new EnvironmentDataStructure
+            catch(Exception e)
             {
-                title = newSimConnectEnvironmentStructure.title
-            };
+                exceptionMessage = $"message error: {e.Message}";
+                return false;
+            }
+            
         }
 
-        private static FlightDataStructure FlightData(
-            SimConnectFlightDataConnector.SimPlaneDataStructure newSimConnectData
-        )
-        {
-            return new FlightDataStructure
-            {
-                latitude = newSimConnectData.latitude,
-                longitude = newSimConnectData.longitude,
-                altitude = newSimConnectData.altitude,
-                altitude_above_ground = newSimConnectData.altitude_above_ground,
-                engine1rpm = newSimConnectData.engine1rpm,
-                engine2rpm = newSimConnectData.engine2rpm,
-                engine3rpm = newSimConnectData.engine3rpm,
-                engine4rpm = newSimConnectData.engine4rpm,
-                lightsmask = newSimConnectData.lightsmask,
-                ground_velocity = newSimConnectData.ground_velocity,
-                plane_pitch = newSimConnectData.plane_pitch,
-                plane_bank = newSimConnectData.plane_bank,
-                plane_heading_true = newSimConnectData.plane_heading_true,
-                plane_heading_magnetic = newSimConnectData.plane_heading_magnetic,
-                plane_airspeed_indicated = newSimConnectData.plane_airspeed_indicated,
-                airspeed_true = newSimConnectData.airspeed_true,
-                vertical_speed = newSimConnectData.vertical_speed,
-                heading_indicator = newSimConnectData.heading_indicator,
-                flaps_handle_position = newSimConnectData.flaps_handle_position,
-                spoilers_handle_position = newSimConnectData.spoilers_handle_position,
-                gear_handle_position = newSimConnectData.gear_handle_position,
-                ambient_wind_velocity = newSimConnectData.ambient_wind_velocity,
-                ambient_wind_direction = newSimConnectData.ambient_wind_direction,
-                ambient_temperature = newSimConnectData.ambient_temperature,
-                stall_warning = newSimConnectData.stall_warning,
-                overspeed_warning = newSimConnectData.overspeed_warning,
-                is_gear_retractable = newSimConnectData.is_gear_retractable,
-                spoiler_available = newSimConnectData.spoiler_available,
-                gps_wp_prev_latitude = newSimConnectData.gps_wp_prev_latitude,
-                gps_wp_prev_longitude = newSimConnectData.gps_wp_prev_longitude,
-                gps_wp_prev_altitude = newSimConnectData.gps_wp_prev_altitude,
-                gps_wp_prev_id = newSimConnectData.gps_wp_prev_id,
-                gps_wp_next_latitude = newSimConnectData.gps_wp_next_latitude,
-                gps_wp_next_longitude = newSimConnectData.gps_wp_next_longitude,
-                gps_wp_next_altitude = newSimConnectData.gps_wp_next_altitude,
-                gps_wp_next_id = newSimConnectData.gps_wp_next_id,
-                gps_flight_plan_wp_index = newSimConnectData.gps_flight_plan_wp_index,
-                gps_flight_plan_wp_count = newSimConnectData.gps_flight_plan_wp_count,
-                sim_on_ground = newSimConnectData.sim_on_ground
-            };
-        }
-
-        private IFlightDataConnector simConnectConnector;
-        private IFlightDataConnector randomWalkConnector;
-        private IFlightDataConnector replayConnector;
-        private OperationalMode operationalMode;
-
+        private IFlightDataConnector delegateConnector;
+        private string operationalMode;
+        private string exceptionMessage;
     }
 
     public struct FlightDataStructure
