@@ -172,6 +172,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FlightLoggingLogic.cs" />
     <Compile Include="GeoCalcUtils.cs" />
     <Compile Include="JsonFilesystemRegistry.cs" />
     <Compile Include="LiveCamRegistry.cs" />
