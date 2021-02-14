@@ -4,6 +4,26 @@ using Newtonsoft.Json;
 
 namespace FS2020PlanePath
 {
+
+    public static class Parser
+    {
+
+        public static T Convert<T>(string s, Func<string, T> converter, Func<T> failureSupplier)
+        {
+            try
+            {
+                return converter.Invoke(s);
+            }
+            catch (Exception e)
+            {
+                T fallbackValue = failureSupplier.Invoke();
+                Console.WriteLine($"converting({s}) to({typeof(T).Name}) generated({e.Message}); fallback({fallbackValue})");
+                return fallbackValue;
+            }
+        }
+
+    }
+
     public class JsonSerializer<V> : ISerializer<V, string>
     {
         public V Deserialize(string s)

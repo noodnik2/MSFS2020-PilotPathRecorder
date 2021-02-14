@@ -180,6 +180,10 @@ namespace FS2020PlanePath
         private const int TblVersion_FlightWaypoints = 1;
         private const int TblVersion_FlightOptions = 1;
 
+        internal const double DEFAULT_ABOVE_THRESHOLD_WRITE_FREQ = 5;
+        internal const int DEFAULT_THRESHOLD_MIN_ALT = 500;
+        internal const int DEFAULT_AUTOMATIC_LOGGING_THRESHOLD = 30;
+
         public FS2020_SQLLiteDB()
         {
             CreateConnection();
@@ -620,7 +624,7 @@ namespace FS2020PlanePath
             {
                 sqlite_cmd.Parameters.Clear();
                 sqlite_cmd.Parameters.AddWithValue("@optionname", "AboveThresholdWriteFreq");
-                sqlite_cmd.Parameters.AddWithValue("@optionvalue", "5");
+                sqlite_cmd.Parameters.AddWithValue("@optionvalue", DEFAULT_ABOVE_THRESHOLD_WRITE_FREQ.ToString());
                 try
                 {
                     sqlite_cmd.ExecuteNonQuery();
@@ -636,7 +640,7 @@ namespace FS2020PlanePath
             {
                 sqlite_cmd.Parameters.Clear();
                 sqlite_cmd.Parameters.AddWithValue("@optionname", "ThresholdMinAltitude");
-                sqlite_cmd.Parameters.AddWithValue("@optionvalue", "500");
+                sqlite_cmd.Parameters.AddWithValue("@optionvalue", DEFAULT_THRESHOLD_MIN_ALT.ToString());
                 try
                 {
                     sqlite_cmd.ExecuteNonQuery();
@@ -716,7 +720,7 @@ namespace FS2020PlanePath
             {
                 sqlite_cmd.Parameters.Clear();
                 sqlite_cmd.Parameters.AddWithValue("@optionname", "AutomaticLoggingThreshold");
-                sqlite_cmd.Parameters.AddWithValue("@optionvalue", "30");
+                sqlite_cmd.Parameters.AddWithValue("@optionvalue", DEFAULT_AUTOMATIC_LOGGING_THRESHOLD.ToString());
                 try
                 {
                     sqlite_cmd.ExecuteNonQuery();

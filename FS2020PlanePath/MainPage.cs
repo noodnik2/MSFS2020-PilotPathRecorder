@@ -25,7 +25,12 @@ namespace FS2020PlanePath
 
         //const string sourceRepo = "SAHorowitz/MSFS2020-PilotPathRecorder";
         const string sourceRepo = "noodnik2/MSFS2020-PilotPathRecorder";
+        
         const string EXPORT_KMLFILE_CAPTION = "Export KML File";
+        const string LOGGING_BUTTONTEXT_STOP = "Stop";
+        const string LOGGING_BUTTONTEXT_START = "Start";
+        const string PAUSE_BUTTONTEXT_CONTINUE = "Continue";
+        const string PAUSE_BUTTONTEXT_PAUSE = "Pause";
 
         bool bLoggingEnabled = false;
         FlightDataConnector flightDataConnector;
@@ -36,8 +41,6 @@ namespace FS2020PlanePath
         int nCurrentFlightID;
         DateTime dtLastDataRecord;
         FlightPlan flightPlan;
-        bool bStartedLoggingDueToSpeed;
-        bool bStoppedLoggingDueToSpeed;
 
         public KmlCameraParameterValues[] getKmlCameraUpdates(int flightId, long seqSince)
         {
@@ -116,7 +119,6 @@ namespace FS2020PlanePath
             Action<EnvironmentDataStructure> environmentDataHandler = environmentData => HandleEnvironmentData(environmentData.title);
             FlightDataConnector flightDataConnector = (
                 new FlightDataConnectorBuilder()
-                .inMode(simConnectRB.Text)
                 .withConnectorFactory(
                     simConnectRB.Text,
                     () => new SimConnectFlightDataConnector(
@@ -211,8 +213,6 @@ namespace FS2020PlanePath
             AttemptSimConnection(simConnectRB.Text);
             StartLoggingBtn.Enabled = true;
             nCurrentFlightID = 0;
-            bStartedLoggingDueToSpeed = false;
-            bStoppedLoggingDueToSpeed = true;
         }
 
         private void AttemptSimConnection(string operationalMode)
@@ -234,19 +234,28 @@ namespace FS2020PlanePath
         {
             // set the last time a record was written to mintime
             dtLastDataRecord = DateTime.MinValue;
-            UpdateLoggingEnabledState(!bLoggingEnabled);
-            loggingStatusLB.Text = bLoggingEnabled ? "Logging active" : "Logging inactive";
+            // automatic logging is disabled when user takes over
+            AutomaticLoggingCB.Checked = false;
+            UpdateLoggingEnabledState(StartLoggingBtn.Text != LOGGING_BUTTONTEXT_STOP);
         }
 
         private void TogglePauseLoggingBtn_Click(object sender, EventArgs e)
         {
-            UpdateLoggingPausedState(bLoggingEnabled);
-            loggingStatusLB.Text = bLoggingEnabled ? "Logging continued" : "Logging paused";
+            // automatic logging is disabled when user takes over
+            AutomaticLoggingCB.Checked = false;
+            UpdateLoggingPausedState(PauseLoggingBtn.Text != PAUSE_BUTTONTEXT_CONTINUE);
         }
 
         private void StopLoggingAction()
         {
+            if (nCurrentFlightID == 0)
+            {
+                Console.WriteLine("stop logging ignored for flight id = 0");
+                return;
+            }
+
             FlightPathDB.WriteFlightPlan(nCurrentFlightID, flightPlan.flight_waypoints);
+            Console.WriteLine($"flight({nCurrentFlightID}) logged; size({flightPlan.flight_waypoints})");
 
             LoadFlightList();
             if (Program.bLogErrorsWritten == true)
@@ -255,28 +264,34 @@ namespace FS2020PlanePath
                 ErrorTBRO.Text = "";
 
             nCurrentFlightID = 0;
-            bStartedLoggingDueToSpeed = false;
         }
 
         void UpdateLoggingEnabledState(bool enableFlag)
         {
-            if (bLoggingEnabled && !enableFlag)
+            if (!enableFlag)
             {
-                // transitioning from enabled to disabled: close out the log
-                bStoppedLoggingDueToSpeed = false;
+                // close out the log
                 StopLoggingAction();
             }
 
-            StartLoggingBtn.Text = enableFlag ? "Stop" : "Start";
+            StartLoggingBtn.Text = enableFlag ? LOGGING_BUTTONTEXT_STOP : LOGGING_BUTTONTEXT_START;
             UpdateLoggingPausedState(false);
             bLoggingEnabled = enableFlag;
             PauseLoggingBtn.Enabled = enableFlag;
+            updateLoggingLabel(bLoggingEnabled ? "Logging active" : "Logging inactive");
+        }
+
+        private void updateLoggingLabel(string status)
+        {
+            string sourceName = AutomaticLoggingCB.Checked ? "auto" : "manual";
+            loggingStatusLB.Text = $"{status} ({sourceName})";
         }
 
         void UpdateLoggingPausedState(bool pausedFlag)
         {
-            PauseLoggingBtn.Text = pausedFlag ? "Continue" : "Pause";
+            PauseLoggingBtn.Text = pausedFlag ? PAUSE_BUTTONTEXT_CONTINUE : PAUSE_BUTTONTEXT_PAUSE;
             bLoggingEnabled = !pausedFlag;
+            updateLoggingLabel(bLoggingEnabled ? "Logging continued" : "Logging paused");
         }
 
         // function is called from the retrieval of information from the simconnect and in this case stores it in the database based 
@@ -285,30 +300,31 @@ namespace FS2020PlanePath
         {
             if (AutomaticLoggingCB.Checked == true)
             {
-                // if user wanted automatic logging and ground speed is > LoggingThresholdGroundVelTB and they hadn't stoppeed logging before manaually then turn logging on and write aircraft to start flight
-                if (simPlaneData.ground_velocity >= Convert.ToInt32(LoggingThresholdGroundVelTB.Text))
+                // automatic management of logging mode according to ground velocity
+                int userLoggingThresholdGroundVelocity = Parser.Convert(
+                    LoggingThresholdGroundVelTB.Text, 
+                    s => Convert.ToInt32(s), 
+                    () => FS2020_SQLLiteDB.DEFAULT_AUTOMATIC_LOGGING_THRESHOLD
+                );
+                if (simPlaneData.ground_velocity >= userLoggingThresholdGroundVelocity)
                 {
-                    if ((bLoggingEnabled == false) && (bStoppedLoggingDueToSpeed == true))
+                    if (!bLoggingEnabled)
                     {
-                        StartLoggingBtn.PerformClick();
-                        bStartedLoggingDueToSpeed = true;
+                        //StartLoggingBtn.PerformClick();
+                        UpdateLoggingEnabledState(true);
                     }
                 }
                 else
                 {
-                    if (bLoggingEnabled == true)
+                    if (bLoggingEnabled)
                     {
-                        // if ground speed is < LoggingThresholdGroundVelTB and user wanted automatic logging and logging was on due to speed then turn it off
-                        if (bStartedLoggingDueToSpeed == true)
-                        {
-                            UpdateLoggingEnabledState(false);
-                        }
+                        // pause logging when speed less than threshold
+                        UpdateLoggingPausedState(true);
                     }
-                    bStoppedLoggingDueToSpeed = true;
                 }
             }
 
-            if (bLoggingEnabled == true)
+            if (bLoggingEnabled)
             {
                 // if we don't have flight header information then ask for it and don't write out this data point
                 if (nCurrentFlightID == 0)
@@ -321,9 +337,19 @@ namespace FS2020PlanePath
 
                     // if altitude above ground is greater or equal threshold and it has been threshold amount of time or
                     //    altitude is below threshold
-                    if (((simPlaneData.altitude_above_ground >= Convert.ToInt32(ThresholdMinAltTB.Text)) &&
-                         (tsDiffRecords.TotalSeconds >= Convert.ToDouble(ThresholdLogWriteFreqTB.Text))) ||
-                        (simPlaneData.altitude_above_ground < Convert.ToInt32(ThresholdMinAltTB.Text)))
+                    int userThresholdMininumAltitude = Parser.Convert(
+                        ThresholdMinAltTB.Text,
+                        s => Convert.ToInt32(ThresholdMinAltTB.Text),
+                        () => FS2020_SQLLiteDB.DEFAULT_THRESHOLD_MIN_ALT
+                    );
+                    double userThresholdLogWriteFrequency = Parser.Convert(
+                        ThresholdLogWriteFreqTB.Text,
+                        s => Convert.ToDouble(ThresholdLogWriteFreqTB.Text),
+                        () => FS2020_SQLLiteDB.DEFAULT_ABOVE_THRESHOLD_WRITE_FREQ
+                    );
+                    if (((simPlaneData.altitude_above_ground >= userThresholdMininumAltitude) &&
+                         (tsDiffRecords.TotalSeconds >= userThresholdLogWriteFrequency)) ||
+                        (simPlaneData.altitude_above_ground < userThresholdMininumAltitude))
                     {
                         int FlightSampleID;
 
