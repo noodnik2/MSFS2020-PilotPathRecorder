@@ -93,42 +93,63 @@ namespace FS2020PlanePath
             IEnumerator<FlightPathData> flightPathDataEnumerator = flightDataGenerator.NextFlightPathSegment();
             while (flightPathDataEnumerator.MoveNext())
             {
-                FlightPathData flightPathData = flightPathDataEnumerator.Current;
-                simPlaneDataHandler.Invoke(
-                    new FlightDataStructure
-                    {
-                        latitude = flightPathData.latitude,
-                        longitude = flightPathData.longitude,
-                        altitude = flightPathData.altitude,
-                        altitude_above_ground = flightPathData.altitudeaboveground,
-                        engine1rpm = flightPathData.Eng1Rpm,
-                        engine2rpm = flightPathData.Eng2Rpm,
-                        engine3rpm = flightPathData.Eng3Rpm,
-                        engine4rpm = flightPathData.Eng4Rpm,
-                        lightsmask = flightPathData.LightsMask,
-                        ground_velocity = flightPathData.ground_velocity,
-                        plane_pitch = flightPathData.plane_pitch,
-                        plane_bank = flightPathData.plane_bank,
-                        plane_heading_true = flightPathData.plane_heading_true,
-                        plane_heading_magnetic = flightPathData.plane_heading_magnetic,
-                        plane_airspeed_indicated = flightPathData.plane_airspeed_indicated,
-                        airspeed_true = flightPathData.airspeed_true,
-                        vertical_speed = flightPathData.vertical_speed,
-                        heading_indicator = flightPathData.heading_indicator,
-                        flaps_handle_position = flightPathData.flaps_handle_position,
-                        spoilers_handle_position = flightPathData.spoilers_handle_position,
-                        gear_handle_position = flightPathData.gear_handle_position,
-                        ambient_wind_velocity = flightPathData.ambient_wind_velocity,
-                        ambient_wind_direction = flightPathData.ambient_wind_direction,
-                        ambient_temperature = flightPathData.ambient_temperature,
-                        stall_warning = flightPathData.stall_warning,
-                        overspeed_warning = flightPathData.overspeed_warning,
-                        is_gear_retractable = flightPathData.is_gear_retractable,
-                        spoiler_available = flightPathData.spoiler_available,
-                        sim_on_ground = flightPathData.sim_on_ground
-                    }
-                );
+                simPlaneDataHandler.Invoke(FpdToFds(flightPathDataEnumerator.Current));
             }
+        }
+
+        private static FlightDataStructure FpdToFds(FlightPathData fpd)
+        {
+            return new FlightDataStructure
+            {
+                timestamp = fpd.timestamp,
+                latitude = fpd.latitude,
+                longitude = fpd.longitude,
+                altitude = fpd.altitude,
+                altitude_above_ground = fpd.altitudeaboveground,
+                engine1rpm = fpd.Eng1Rpm,
+                engine2rpm = fpd.Eng2Rpm,
+                engine3rpm = fpd.Eng3Rpm,
+                engine4rpm = fpd.Eng4Rpm,
+                lightsmask = fpd.LightsMask,
+                ground_velocity = fpd.ground_velocity,
+                plane_pitch = fpd.plane_pitch,
+                plane_bank = fpd.plane_bank,
+                plane_heading_true = fpd.plane_heading_true,
+                plane_heading_magnetic = fpd.plane_heading_magnetic,
+                plane_airspeed_indicated = fpd.plane_airspeed_indicated,
+                airspeed_true = fpd.airspeed_true,
+                vertical_speed = fpd.vertical_speed,
+                heading_indicator = fpd.heading_indicator,
+                flaps_handle_position = fpd.flaps_handle_position,
+                spoilers_handle_position = fpd.spoilers_handle_position,
+                gear_handle_position = fpd.gear_handle_position,
+                ambient_wind_velocity = fpd.ambient_wind_velocity,
+                ambient_wind_direction = fpd.ambient_wind_direction,
+                ambient_temperature = fpd.ambient_temperature,
+                stall_warning = fpd.stall_warning,
+                overspeed_warning = fpd.overspeed_warning,
+                is_gear_retractable = fpd.is_gear_retractable,
+                spoiler_available = fpd.spoiler_available,
+                sim_on_ground = fpd.sim_on_ground,
+
+                //
+                //  No flight plan, so no values for the following...
+                //
+
+                //gps_wp_prev_latitude = null,
+                //gps_wp_prev_longitude = null,
+                //gps_wp_prev_altitude = null,
+                //gps_wp_prev_id = null,
+
+                //gps_wp_next_latitude = null,
+                //gps_wp_next_longitude = null,
+                //gps_wp_next_altitude = null,
+                //gps_wp_next_id = null,
+
+                //gps_flight_plan_wp_index = null,
+                //gps_flight_plan_wp_count = null,
+
+            };
         }
 
         [DllImport("user32.dll", SetLastError = true)]

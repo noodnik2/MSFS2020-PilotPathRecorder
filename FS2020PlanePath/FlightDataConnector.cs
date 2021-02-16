@@ -152,6 +152,7 @@ namespace FS2020PlanePath
 
     public struct FlightDataStructure
     {
+        public long timestamp;
         public double latitude;
         public double longitude;
         public Int32 altitude;

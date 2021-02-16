@@ -27,10 +27,6 @@ namespace FS2020PlanePath
         const string sourceRepo = "noodnik2/MSFS2020-PilotPathRecorder";
         
         const string EXPORT_KMLFILE_CAPTION = "Export KML File";
-        const string LOGGING_BUTTONTEXT_STOP = "Stop";
-        const string LOGGING_BUTTONTEXT_START = "Start";
-        const string PAUSE_BUTTONTEXT_CONTINUE = "Continue";
-        const string PAUSE_BUTTONTEXT_PAUSE = "Pause";
 
         bool bLoggingEnabled = false;
         FlightDataConnector flightDataConnector;
@@ -41,6 +37,7 @@ namespace FS2020PlanePath
         int nCurrentFlightID;
         DateTime dtLastDataRecord;
         FlightPlan flightPlan;
+        FlightLogUiOrchestrator flightLogUiOrchestrator;
 
         public KmlCameraParameterValues[] getKmlCameraUpdates(int flightId, long seqSince)
         {
@@ -109,8 +106,96 @@ namespace FS2020PlanePath
             liveCamServer = new LiveCamServer(scKmlAdapter, liveCamRegistry);
 
             flightDataConnector = CreateFlightDataConnector();
+            FlightLoggingButtonMapper startStopButtonMapper = new FlightLoggingButtonMapper(StartLoggingBtn, "Start", "Stop", true, false);
+            FlightLoggingButtonMapper pauseResumeButtonMapper = new FlightLoggingButtonMapper(PauseLoggingBtn, "Pause", "Resume", false, false);
+            flightLogUiOrchestrator = new FlightLogUiOrchestrator(
+                startStopButtonMapper.OnButton,
+                startStopButtonMapper.OffButton,
+                pauseResumeButtonMapper.OnButton,
+                pauseResumeButtonMapper.OffButton,
+                s => { },
+                s => {
+                    bLoggingEnabled = true;
+                    loggingStatusLB.Text = (
+                        s == FlightLogUiOrchestrator.Source.StartStop
+                      ? $"Logging activated at {DateTime.Now}."
+                      : $"Logging resumed at {DateTime.Now}."
+                    );
+                },
+                s => {
+                    bLoggingEnabled = false;
+                    loggingStatusLB.Text = (
+                        s == FlightLogUiOrchestrator.Source.StartStop
+                      ? $"Logging stopped at {DateTime.Now}."
+                      : $"Logging paused at {DateTime.Now}."
+                    );
+                },
+                s => StopLoggingAction()
+            );
+            flightLogUiOrchestrator.IsAutomaticMode = AutomaticLoggingCB.Checked;
+        }
 
-            UpdateLoggingEnabledState(false);
+        class FlightLoggingButtonMapper
+        {
+
+            internal FlightLoggingButtonMapper(
+                Button button, 
+                string onText,
+                string offText,
+                bool onEnabled, 
+                bool offEnabled
+            )
+            {
+                this.button = button;
+                this.onText = onText;
+                this.offText = offText;
+                OnButton.IsEnabled = onEnabled;
+                OffButton.IsEnabled = offEnabled;
+            }
+
+            internal FlightLoggingButton OnButton => new FlightLoggingButton(
+                () => OnState,
+                newOnState => SetState(newOnState, OffState)
+            );
+
+            internal FlightLoggingButton OffButton => new FlightLoggingButton(
+                () => OffState,
+                newOffState => SetState(OnState, newOffState)
+            );
+
+            private void SetState(bool onState, bool offState)
+            {
+                Debug.Assert(!(onState && offState), "invalid button state");
+                button.Enabled = onState || offState;
+                button.Text = onState ? onText : offText;
+            }
+
+            private bool OnState => button.Enabled && button.Text == onText;
+            private bool OffState => button.Enabled && button.Text == offText;
+
+            private Button button;
+            private string onText;
+            private string offText;
+
+        }
+
+        public class FlightLoggingButton : FlightLoggingButtonModel
+        {
+
+            public FlightLoggingButton(Func<bool> stateGetter, Action<bool> stateSetter)
+            {
+                this.stateGetter = stateGetter;
+                this.stateSetter = stateSetter;
+            }
+
+            public bool IsEnabled {
+                get => stateGetter.Invoke();
+                set => stateSetter.Invoke(value);
+            }
+
+            Func<bool> stateGetter;
+            Action<bool> stateSetter;
+
         }
 
         private FlightDataConnector CreateFlightDataConnector()
@@ -234,28 +319,37 @@ namespace FS2020PlanePath
         {
             // set the last time a record was written to mintime
             dtLastDataRecord = DateTime.MinValue;
-            // automatic logging is disabled when user takes over
-            AutomaticLoggingCB.Checked = false;
-            UpdateLoggingEnabledState(StartLoggingBtn.Text != LOGGING_BUTTONTEXT_STOP);
+            if (flightLogUiOrchestrator.StartButton.IsEnabled)
+            {
+                flightLogUiOrchestrator.Start();
+            } else
+            {
+                flightLogUiOrchestrator.Stop();
+            }
         }
 
         private void TogglePauseLoggingBtn_Click(object sender, EventArgs e)
         {
-            // automatic logging is disabled when user takes over
-            AutomaticLoggingCB.Checked = false;
-            UpdateLoggingPausedState(PauseLoggingBtn.Text != PAUSE_BUTTONTEXT_CONTINUE);
+            if (flightLogUiOrchestrator.PauseButton.IsEnabled)
+            {
+                flightLogUiOrchestrator.Pause();
+            }
+            else
+            {
+                flightLogUiOrchestrator.Resume();
+            }
         }
 
         private void StopLoggingAction()
         {
             if (nCurrentFlightID == 0)
             {
-                Console.WriteLine("stop logging ignored for flight id = 0");
+                loggingStatusLB.Text = "Empty log closed.";
                 return;
             }
 
             FlightPathDB.WriteFlightPlan(nCurrentFlightID, flightPlan.flight_waypoints);
-            Console.WriteLine($"flight({nCurrentFlightID}) logged; size({flightPlan.flight_waypoints})");
+            loggingStatusLB.Text = $"Flight #{nCurrentFlightID} logged.";
 
             LoadFlightList();
             if (Program.bLogErrorsWritten == true)
@@ -266,39 +360,11 @@ namespace FS2020PlanePath
             nCurrentFlightID = 0;
         }
 
-        void UpdateLoggingEnabledState(bool enableFlag)
-        {
-            if (!enableFlag)
-            {
-                // close out the log
-                StopLoggingAction();
-            }
-
-            StartLoggingBtn.Text = enableFlag ? LOGGING_BUTTONTEXT_STOP : LOGGING_BUTTONTEXT_START;
-            UpdateLoggingPausedState(false);
-            bLoggingEnabled = enableFlag;
-            PauseLoggingBtn.Enabled = enableFlag;
-            updateLoggingLabel(bLoggingEnabled ? "Logging active" : "Logging inactive");
-        }
-
-        private void updateLoggingLabel(string status)
-        {
-            string sourceName = AutomaticLoggingCB.Checked ? "auto" : "manual";
-            loggingStatusLB.Text = $"{status} ({sourceName})";
-        }
-
-        void UpdateLoggingPausedState(bool pausedFlag)
-        {
-            PauseLoggingBtn.Text = pausedFlag ? PAUSE_BUTTONTEXT_CONTINUE : PAUSE_BUTTONTEXT_PAUSE;
-            bLoggingEnabled = !pausedFlag;
-            updateLoggingLabel(bLoggingEnabled ? "Logging continued" : "Logging paused");
-        }
-
         // function is called from the retrieval of information from the simconnect and in this case stores it in the database based 
         // on prefrences
         public void HandleFlightData(FlightDataStructure simPlaneData)
         {
-            if (AutomaticLoggingCB.Checked == true)
+            if (flightLogUiOrchestrator.IsAutomaticMode)
             {
                 // automatic management of logging mode according to ground velocity
                 int userLoggingThresholdGroundVelocity = Parser.Convert(
@@ -308,19 +374,13 @@ namespace FS2020PlanePath
                 );
                 if (simPlaneData.ground_velocity >= userLoggingThresholdGroundVelocity)
                 {
-                    if (!bLoggingEnabled)
-                    {
-                        //StartLoggingBtn.PerformClick();
-                        UpdateLoggingEnabledState(true);
-                    }
+                    // TODO: optimize and fire this only on transition
+                    flightLogUiOrchestrator.ThresholdReached();
                 }
                 else
                 {
-                    if (bLoggingEnabled)
-                    {
-                        // pause logging when speed less than threshold
-                        UpdateLoggingPausedState(true);
-                    }
+                    // TODO: optimize and fire this only on transition
+                    flightLogUiOrchestrator.ThresholdMissed();
                 }
             }
 
@@ -398,18 +458,17 @@ namespace FS2020PlanePath
         {
             int nCount;
             int nFlightID;
-            string sfilename;
             long lprevTimestamp;
             ListViewItem selectedFlight;
 
             kmlFileName = default(string);
-            UpdateLoggingEnabledState(false);
+            //UpdateLoggingEnabledState(false, false);  // TODO investigate why this was here - why would it matter?
 
             if (!getSelectedFlight(out selectedFlight, EXPORT_KMLFILE_CAPTION))
             {
                 return false;
             }
-            nFlightID = (int) selectedFlight.Tag;
+            nFlightID = (int)selectedFlight.Tag;
 
 
             if (KMLFilePathTBRO.Text.Length == 0)
@@ -421,7 +480,7 @@ namespace FS2020PlanePath
             // This is the root element of the file
             var kml = new Kml();
             Folder mainFolder = new Folder();
-            mainFolder.Name = String.Format("{0} {1}", FlightPickerLV.SelectedItems[0].SubItems[1].Text, FlightPickerLV.SelectedItems[0].SubItems[0].Text);
+            mainFolder.Name = GetSavedFlightName(FlightPickerLV.SelectedItems[0]);
             mainFolder.Description = new Description
             {
                 Text = "Overall Data for the flight"
@@ -716,11 +775,7 @@ namespace FS2020PlanePath
             }
 
             // write out KML file
-            char[] invalidFileNameChars = Path.GetInvalidFileNameChars();
-            sfilename = String.Format("{0}_{1}.kml", FlightPickerLV.SelectedItems[0].SubItems[1].Text, FlightPickerLV.SelectedItems[0].SubItems[0].Text);
-            var validfilename = new string(sfilename.Select(ch => invalidFileNameChars.Contains(ch) ? '_' : ch).ToArray());
-            sfilename = string.Concat(KMLFilePathTBRO.Text, "\\");
-            sfilename += validfilename;
+            string sfilename = string.Concat(KMLFilePathTBRO.Text, "\\", GetSavedFlightFileName(FlightPickerLV.SelectedItems[0]));
 
             System.IO.File.Delete(sfilename);
             KmlFile kmlfile = KmlFile.Create(kml, true);
@@ -730,6 +785,18 @@ namespace FS2020PlanePath
             }
             kmlFileName = sfilename;
             return true;
+        }
+
+        private static string GetSavedFlightName(ListViewItem lvi)
+        {
+            return $"{lvi.SubItems[1].Text} {lvi.SubItems[0].Text}";
+        }
+
+        private static string GetSavedFlightFileName(ListViewItem lvi)
+        {
+            string rawFileName = $"{lvi.SubItems[1].Text}_{lvi.SubItems[0].Text}.kml";
+            char[] invalidFileNameChars = Path.GetInvalidFileNameChars();
+            return new string(rawFileName.Select(ch => invalidFileNameChars.Contains(ch) ? '_' : ch).ToArray());
         }
 
         // function that writes out KML file based on the flight chosen by the user
@@ -797,17 +864,32 @@ namespace FS2020PlanePath
 
         private void DeleteFlight_Click(object sender, EventArgs e)
         {
-            int nFlightID;
 
-            if (FlightPickerLV.SelectedItems.Count < 1)
+            ListView.SelectedListViewItemCollection selectedItems = FlightPickerLV.SelectedItems;
+            if (selectedItems.Count < 1)
             {
-                MessageBox.Show("Please choose a flight before deleting.", "Delete a Flight");
+                UserDialogUtils.displayError("Delete Flight(s)", "Please choose the flight(s) to delete.");
                 return;
             }
-            if (MessageBox.Show("Deleting a flight from the database cannot be undone.  Are you sure you want to delete?", "Delete a Flight", MessageBoxButtons.YesNo) == DialogResult.Yes)
-            {
-                nFlightID = (int)FlightPickerLV.SelectedItems[0].Tag;
-                FlightPathDB.DeleteFlight(nFlightID);
+
+            IEnumerable<ListViewItem> flightsToBeDeleted = selectedItems.Cast<ListViewItem>();
+            if (
+                UserDialogUtils.obtainConfirmation(
+                    "Delete Flight(s)",
+                    $"Flight(s) to be deleted:\n\n" +
+                    $"- {string.Join("\n- ", flightsToBeDeleted.Select(f => GetSavedFlightName(f)).ToArray())}\n\n" +
+                    "NOTE: Deleting a flight from the database cannot be undone.\n\n" +
+                    "Are you sure you want to proceed?",
+                    MessageBoxIcon.Exclamation
+                )
+            ) {
+                foreach (ListViewItem flight in flightsToBeDeleted)
+                {
+                    int flightID = (int) flight.Tag;
+                    string flightName = GetSavedFlightName(flight);
+                    FlightPathDB.DeleteFlight(flightID);
+                    Console.WriteLine($"deleted flightNo({flightID}); {flightName}");
+                }
                 LoadFlightList();
             }
         }
@@ -883,6 +965,7 @@ namespace FS2020PlanePath
         private void AutomaticLoggingCB_Click(object sender, EventArgs e)
         {
             LoggingThresholdGroundVelTB.Enabled = AutomaticLoggingCB.Checked;
+            flightLogUiOrchestrator.IsAutomaticMode = AutomaticLoggingCB.Checked;
         }
 
         private void LiveCameraCB_CheckedChanged(object sender, EventArgs eventArgs)

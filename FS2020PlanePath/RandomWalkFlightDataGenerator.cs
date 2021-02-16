@@ -43,19 +43,7 @@ namespace FS2020PlanePath
                 currentSample.plane_heading_true = bearing;
                 currentSample.latitude = to.lat;
                 currentSample.longitude = to.lon;
-                flightPath.Add(
-                    new FlightPathData
-                    {
-                        timestamp = currentSample.timestamp,
-                        longitude = currentSample.longitude,
-                        latitude = currentSample.latitude,
-                        altitude = currentSample.altitude,
-                        plane_pitch = currentSample.plane_pitch,
-                        plane_bank = currentSample.plane_bank,
-                        plane_heading_true = currentSample.plane_heading_true,
-                        ground_velocity = currentSample.ground_velocity
-                    }
-                );
+                flightPath.Add(CopyOf(currentSample));
 
             }
 
@@ -73,6 +61,44 @@ namespace FS2020PlanePath
             plane_heading_true = 200,
             ground_velocity = 40           // nm/hr
         };
+
+        private static FlightPathData CopyOf(FlightPathData source)
+        {
+            return new FlightPathData
+            {
+                timestamp = source.timestamp,
+                longitude = source.longitude,
+                latitude = source.latitude,
+                altitude = source.altitude,
+                plane_pitch = source.plane_pitch,
+                plane_bank = source.plane_bank,
+                plane_heading_true = source.plane_heading_true,
+                ground_velocity = source.ground_velocity,
+
+                vertical_speed = source.vertical_speed,
+                airspeed_true = source.airspeed_true,
+                heading_indicator = source.heading_indicator,
+                plane_airspeed_indicated = source.plane_airspeed_indicated,
+                plane_heading_magnetic = source.plane_heading_magnetic,
+                altitudeaboveground = source.altitudeaboveground,
+                Eng1Rpm = source.Eng1Rpm,
+                Eng2Rpm = source.Eng2Rpm,
+                Eng3Rpm = source.Eng3Rpm,
+                Eng4Rpm = source.Eng4Rpm,
+                LightsMask = source.LightsMask,
+                flaps_handle_position = source.flaps_handle_position,
+                spoilers_handle_position = source.spoilers_handle_position,
+                gear_handle_position = source.gear_handle_position,
+                ambient_wind_velocity = source.ambient_wind_velocity,
+                ambient_wind_direction = source.ambient_wind_direction,
+                ambient_temperature = source.ambient_temperature,
+                stall_warning = source.stall_warning,
+                overspeed_warning = source.overspeed_warning,
+                is_gear_retractable = source.is_gear_retractable,
+                spoiler_available = source.spoiler_available,
+                sim_on_ground = source.sim_on_ground
+            };
+        }
 
     }
 

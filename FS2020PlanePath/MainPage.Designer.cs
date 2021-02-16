@@ -38,10 +38,8 @@
             this.SimConnectStatusLabel = new System.Windows.Forms.Label();
             this.SimConnetStatusTextBox = new System.Windows.Forms.Label();
             this.StartLoggingBtn = new System.Windows.Forms.Button();
-            this.StopLoggingBtn = new System.Windows.Forms.Button();
             this.CreateKMLButton = new System.Windows.Forms.Button();
             this.PauseLoggingBtn = new System.Windows.Forms.Button();
-            this.ContinueLogginBtn = new System.Windows.Forms.Button();
             this.RetrySimConnectionBtn = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
@@ -154,16 +152,6 @@
             this.StartLoggingBtn.UseVisualStyleBackColor = true;
             this.StartLoggingBtn.Click += new System.EventHandler(this.ToggleLoggingBtn_Click);
             // 
-            // StopLoggingBtn
-            // 
-            this.StopLoggingBtn.Enabled = false;
-            this.StopLoggingBtn.Location = new System.Drawing.Point(455, 135);
-            this.StopLoggingBtn.Name = "StopLoggingBtn";
-            this.StopLoggingBtn.Size = new System.Drawing.Size(98, 23);
-            this.StopLoggingBtn.TabIndex = 14;
-            this.StopLoggingBtn.Text = "Stop Logging";
-            this.StopLoggingBtn.UseVisualStyleBackColor = true;
-            // 
             // CreateKMLButton
             // 
             this.CreateKMLButton.Location = new System.Drawing.Point(125, 506);
@@ -184,16 +172,6 @@
             this.PauseLoggingBtn.Text = "PL";
             this.PauseLoggingBtn.UseVisualStyleBackColor = true;
             this.PauseLoggingBtn.Click += new System.EventHandler(this.TogglePauseLoggingBtn_Click);
-            // 
-            // ContinueLogginBtn
-            // 
-            this.ContinueLogginBtn.Enabled = false;
-            this.ContinueLogginBtn.Location = new System.Drawing.Point(455, 106);
-            this.ContinueLogginBtn.Name = "ContinueLogginBtn";
-            this.ContinueLogginBtn.Size = new System.Drawing.Size(98, 23);
-            this.ContinueLogginBtn.TabIndex = 13;
-            this.ContinueLogginBtn.Text = "Continue Logging";
-            this.ContinueLogginBtn.UseVisualStyleBackColor = true;
             // 
             // RetrySimConnectionBtn
             // 
@@ -278,7 +256,7 @@
             this.DeleteFlight.Name = "DeleteFlight";
             this.DeleteFlight.Size = new System.Drawing.Size(152, 23);
             this.DeleteFlight.TabIndex = 28;
-            this.DeleteFlight.Text = "Delete Flight from Database";
+            this.DeleteFlight.Text = "Delete Flight(s) From DB";
             this.DeleteFlight.UseVisualStyleBackColor = true;
             this.DeleteFlight.Click += new System.EventHandler(this.DeleteFlight_Click);
             // 
@@ -520,10 +498,8 @@
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.RetrySimConnectionBtn);
-            this.Controls.Add(this.ContinueLogginBtn);
             this.Controls.Add(this.PauseLoggingBtn);
             this.Controls.Add(this.CreateKMLButton);
-            this.Controls.Add(this.StopLoggingBtn);
             this.Controls.Add(this.StartLoggingBtn);
             this.Controls.Add(this.SimConnectStatusLabel);
             this.Controls.Add(this.SimConnetStatusTextBox);
@@ -533,6 +509,7 @@
             this.Controls.Add(this.ThresholdLogWriteFreqTB);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.GoogleEarthGB);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "MainPage";
             this.Text = "Pilot Path Recorder v";
@@ -554,10 +531,8 @@
         private System.Windows.Forms.Label SimConnectStatusLabel;
         private System.Windows.Forms.Label SimConnetStatusTextBox;
         private System.Windows.Forms.Button StartLoggingBtn;
-        private System.Windows.Forms.Button StopLoggingBtn;
         private System.Windows.Forms.Button CreateKMLButton;
         private System.Windows.Forms.Button PauseLoggingBtn;
-        private System.Windows.Forms.Button ContinueLogginBtn;
         private System.Windows.Forms.Button RetrySimConnectionBtn;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label4;
