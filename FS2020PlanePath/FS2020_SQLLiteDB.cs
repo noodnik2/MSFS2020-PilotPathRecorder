@@ -984,10 +984,39 @@ namespace FS2020PlanePath
         {
 
             SQLiteCommand sqlite_cmd = sqlite_conn.CreateCommand();
-            sqlite_cmd.CommandText = @"select sample_datetimestamp, cast(latitude as double), cast(longitude as double), altitude, 
-cast(plane_pitch as double), cast(plane_bank as double), cast(plane_heading_true as double)
-from flightsamples s, flightsampledetails d 
-where s.flightsamplesid = d.flightsamplesid and sample_datetimestamp > @earliestDateTimestamp and flightid = @FlightID
+            sqlite_cmd.CommandText = @"
+select 
+    sample_datetimestamp, 
+    cast(latitude as double), 
+    cast(longitude as double), 
+    altitude, 
+    cast(plane_pitch as double), 
+    cast(plane_bank as double), 
+    cast(plane_heading_true as double),
+    cast (ground_velocity as double),
+    cast (plane_heading_magnetic as double),
+    cast(plane_airspeed_indicated as double),
+    cast(airspeed_true as double), 
+    cast(vertical_speed as double), 
+    cast(heading_indicator as double), 
+    flaps_handle_position,
+    spoilers_handle_position, 
+    gear_handle_position, 
+    cast (ambient_wind_velocity as double), 
+    cast (ambient_wind_direction as double), 
+    cast (ambient_temperature as double),
+    stall_warning, 
+    overspeed_warning, 
+    is_gear_retractable, 
+    spoiler_available, 
+    sim_on_ground,
+    alitutdeaboveground
+from
+    flightsamples s, flightsampledetails d 
+where 
+    s.flightsamplesid = d.flightsamplesid 
+and sample_datetimestamp > @earliestDateTimestamp 
+and flightid = @FlightID
 "; ;
             sqlite_cmd.Parameters.AddWithValue("@FlightID", pk);
             sqlite_cmd.Parameters.AddWithValue("@earliestDateTimestamp", startingTimestamp);
@@ -1006,7 +1035,24 @@ where s.flightsamplesid = d.flightsamplesid and sample_datetimestamp > @earliest
                             altitude = r.GetInt32(3),
                             plane_pitch = r.GetDouble(4),
                             plane_bank = r.GetDouble(5),
-                            plane_heading_true = r.GetDouble(6)
+                            plane_heading_true = r.GetDouble(6),
+                            ground_velocity = r.GetDouble(7),
+                            plane_heading_magnetic = r.GetDouble(8),
+                            plane_airspeed_indicated = r.GetDouble(9),
+                            airspeed_true = r.GetDouble(10),
+                            vertical_speed = r.GetDouble(11),
+                            heading_indicator = r.GetDouble(12),
+                            flaps_handle_position = r.GetInt32(13),
+                            spoilers_handle_position = r.GetInt32(14),
+                            gear_handle_position = r.GetInt32(15),
+                            ambient_wind_velocity = r.GetDouble(16),
+                            ambient_wind_direction = r.GetDouble(17),
+                            ambient_temperature = r.GetDouble(18),
+                            stall_warning = r.GetInt32(19),
+                            overspeed_warning = r.GetInt32(20),
+                            is_gear_retractable = r.GetInt32(21),
+                            sim_on_ground = r.GetInt32(22),
+                            altitudeaboveground = r.GetInt32(23)
                         }
                     );
                 }

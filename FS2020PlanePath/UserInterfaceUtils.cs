@@ -61,13 +61,13 @@ namespace FS2020PlanePath
             MessageBox.Show($"Details:\n{details}", caption, MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
-        public static void displayMessage(string caption, string details)
+        public static void displayMessage(string caption, string details, MessageBoxIcon icon = MessageBoxIcon.Information)
         {
             MessageBox.Show(
                 details,
                 caption,
                 MessageBoxButtons.OK,
-                MessageBoxIcon.Information
+                icon
             );
         }
 

@@ -392,7 +392,7 @@ namespace FS2020PlanePath
         {
             if (FlightPickerLV.SelectedItems.Count != 1)
             {
-                UserDialogUtils.displayMessage(caption, "Please choose a flight.");
+                UserDialogUtils.displayMessage(caption, "Please choose a flight.", MessageBoxIcon.Question);
                 listViewItem = default(ListViewItem);
                 return false;
             }
