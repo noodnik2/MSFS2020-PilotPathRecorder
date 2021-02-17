@@ -2,16 +2,11 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Media;
 using System.Net;
-using System.Security.Policy;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using Microsoft.FlightSimulator.SimConnect;
 using SharpKml.Base;
 using SharpKml.Dom;
 using SharpKml.Engine;
@@ -24,8 +19,7 @@ namespace FS2020PlanePath
     {
 
         //const string sourceRepo = "SAHorowitz/MSFS2020-PilotPathRecorder";
-        const string sourceRepo = "noodnik2/MSFS2020-PilotPathRecorder";
-        
+        const string sourceRepo = "noodnik2/MSFS2020-PilotPathRecorder";        
         const string EXPORT_KMLFILE_CAPTION = "Export KML File";
 
         bool bLoggingEnabled = false;
@@ -35,33 +29,10 @@ namespace FS2020PlanePath
         LiveCamServer liveCamServer;
         FS2020_SQLLiteDB FlightPathDB;
         int nCurrentFlightID;
+        bool bLoggingThresholdReached;
         DateTime dtLastDataRecord;
         FlightPlan flightPlan;
-        FlightLogUiOrchestrator flightLogUiOrchestrator;
-
-        public KmlCameraParameterValues[] getKmlCameraUpdates(int flightId, long seqSince)
-        {
-            Console.WriteLine($"looking for camera updates({flightId}, {seqSince})");
-
-            List<FlightPathData> flightPaths = FlightPathDB.GetFlightPathSinceTimestamp(flightId, seqSince);
-
-            KmlCameraParameterValues[] kmlCameraUpdates = new KmlCameraParameterValues[flightPaths.Count];
-            int cameraIndex = 0;
-            foreach (var fp in flightPaths)
-            {
-                KmlCameraParameterValues newCameraParameterValues = scKmlAdapter.KmlCameraValues.ShallowCopy();
-                newCameraParameterValues.seq = fp.timestamp;
-                newCameraParameterValues.altitude = (fp.altitude / 3.28084) + 0.5;
-                newCameraParameterValues.longitude = fp.longitude;
-                newCameraParameterValues.latitude = fp.latitude;
-                newCameraParameterValues.tilt = fp.plane_pitch;
-                newCameraParameterValues.roll = fp.plane_bank;
-                newCameraParameterValues.heading = fp.plane_heading_true;
-                kmlCameraUpdates[cameraIndex++] = newCameraParameterValues;
-            }
-
-            return kmlCameraUpdates;
-        }
+        FlightLoggingOrchestrator flightLogOrchestrator;
 
 
         public MainPage()
@@ -92,110 +63,51 @@ namespace FS2020PlanePath
             LoggingThresholdGroundVelTB.Text = FlightPathDB.GetTableOption("AutomaticLoggingThreshold");
             LoggingThresholdGroundVelTB.Enabled = AutomaticLoggingCB.Checked;
 
-            liveCamRegistry = new LiveCamRegistryFactory().NewRegistry();
-
             LoadFlightList();
+
+            liveCamRegistry = new LiveCamRegistryFactory().NewRegistry();
             LoadLiveCams();
 
-            KmlCameraParameterValues kmlCameraParameterValues = new KmlCameraParameterValues();
-            kmlCameraParameterValues.listenerUrl = LiveCamServer.LiveCamUrl();
-            kmlCameraParameterValues.liveCamUriPath = LiveCamServer.LIVECAM_URLPATH_SEGMENTS;
-            kmlCameraParameterValues.getMultitrackUpdates = getKmlCameraUpdates;
-
-            scKmlAdapter = new ScKmlAdapter(kmlCameraParameterValues);
+            scKmlAdapter = new ScKmlAdapter(CreateKmlParameterValues());
             liveCamServer = new LiveCamServer(scKmlAdapter, liveCamRegistry);
 
             flightDataConnector = CreateFlightDataConnector();
-            FlightLoggingButtonMapper startStopButtonMapper = new FlightLoggingButtonMapper(StartLoggingBtn, "Start", "Stop", true, false);
-            FlightLoggingButtonMapper pauseResumeButtonMapper = new FlightLoggingButtonMapper(PauseLoggingBtn, "Pause", "Resume", false, false);
-            flightLogUiOrchestrator = new FlightLogUiOrchestrator(
-                startStopButtonMapper.OnButton,
-                startStopButtonMapper.OffButton,
-                pauseResumeButtonMapper.OnButton,
-                pauseResumeButtonMapper.OffButton,
-                s => { },
-                s => {
-                    bLoggingEnabled = true;
-                    loggingStatusLB.Text = (
-                        s == FlightLogUiOrchestrator.Source.StartStop
-                      ? $"Logging activated at {DateTime.Now}."
-                      : $"Logging resumed at {DateTime.Now}."
-                    );
-                },
-                s => {
-                    bLoggingEnabled = false;
-                    loggingStatusLB.Text = (
-                        s == FlightLogUiOrchestrator.Source.StartStop
-                      ? $"Logging stopped at {DateTime.Now}."
-                      : $"Logging paused at {DateTime.Now}."
-                    );
-                },
-                s => StopLoggingAction()
-            );
-            flightLogUiOrchestrator.IsAutomaticMode = AutomaticLoggingCB.Checked;
+            flightLogOrchestrator = CreateFlightLogOrchestrator();
         }
 
-        class FlightLoggingButtonMapper
+        private KmlCameraParameterValues CreateKmlParameterValues()
         {
-
-            internal FlightLoggingButtonMapper(
-                Button button, 
-                string onText,
-                string offText,
-                bool onEnabled, 
-                bool offEnabled
-            )
-            {
-                this.button = button;
-                this.onText = onText;
-                this.offText = offText;
-                OnButton.IsEnabled = onEnabled;
-                OffButton.IsEnabled = offEnabled;
-            }
-
-            internal FlightLoggingButton OnButton => new FlightLoggingButton(
-                () => OnState,
-                newOnState => SetState(newOnState, OffState)
-            );
-
-            internal FlightLoggingButton OffButton => new FlightLoggingButton(
-                () => OffState,
-                newOffState => SetState(OnState, newOffState)
-            );
-
-            private void SetState(bool onState, bool offState)
-            {
-                Debug.Assert(!(onState && offState), "invalid button state");
-                button.Enabled = onState || offState;
-                button.Text = onState ? onText : offText;
-            }
-
-            private bool OnState => button.Enabled && button.Text == onText;
-            private bool OffState => button.Enabled && button.Text == offText;
-
-            private Button button;
-            private string onText;
-            private string offText;
-
+            KmlCameraParameterValues kmlCameraParameterValues = new KmlCameraParameterValues();
+            kmlCameraParameterValues.listenerUrl = LiveCamServer.LiveCamUrl();
+            kmlCameraParameterValues.liveCamUriPath = LiveCamServer.LIVECAM_URLPATH_SEGMENTS;
+            kmlCameraParameterValues.getMultitrackUpdates = getKmlCameraUpdatesFromDb;
+            return kmlCameraParameterValues;
         }
 
-        public class FlightLoggingButton : FlightLoggingButtonModel
+        private KmlCameraParameterValues[] getKmlCameraUpdatesFromDb(int flightId, long seqSince)
         {
+            Console.WriteLine($"fetching camera updates for flight #{flightId} from timestamp({seqSince})");
 
-            public FlightLoggingButton(Func<bool> stateGetter, Action<bool> stateSetter)
+            List<FlightPathData> flightPaths = FlightPathDB.GetFlightPathSinceTimestamp(flightId, seqSince);
+
+            KmlCameraParameterValues[] kmlCameraUpdates = new KmlCameraParameterValues[flightPaths.Count];
+            int cameraIndex = 0;
+            foreach (var fp in flightPaths)
             {
-                this.stateGetter = stateGetter;
-                this.stateSetter = stateSetter;
+                KmlCameraParameterValues newCameraParameterValues = scKmlAdapter.KmlCameraValues.ShallowCopy();
+
+                newCameraParameterValues.seq = fp.timestamp;
+                newCameraParameterValues.altitude = (fp.altitude / 3.28084) + 0.5;
+                newCameraParameterValues.longitude = fp.longitude;
+                newCameraParameterValues.latitude = fp.latitude;
+                newCameraParameterValues.tilt = fp.plane_pitch;
+                newCameraParameterValues.roll = fp.plane_bank;
+                newCameraParameterValues.heading = fp.plane_heading_true;
+
+                kmlCameraUpdates[cameraIndex++] = newCameraParameterValues;
             }
 
-            public bool IsEnabled {
-                get => stateGetter.Invoke();
-                set => stateSetter.Invoke(value);
-            }
-
-            Func<bool> stateGetter;
-            Action<bool> stateSetter;
-
+            return kmlCameraUpdates;
         }
 
         private FlightDataConnector CreateFlightDataConnector()
@@ -269,6 +181,36 @@ namespace FS2020PlanePath
             );
         }
 
+        private FlightLoggingOrchestrator CreateFlightLogOrchestrator()
+        {
+            FlightLoggingOrchestrator orchestrator = new FlightLoggingOrchestrator(
+                new MultiButtonStateModel<ToggleState>(StartLoggingBtn, true, ToggleState.Out, "Start", "Stop"),
+                new MultiButtonStateModel<ToggleState>(PauseLoggingBtn, false, ToggleState.Out, "Pause", "Resume"),
+                s => { },
+                s => {
+                    bLoggingEnabled = true;
+                    loggingStatusLB.Text = (
+                        s == FlightLoggingOrchestrator.Source.StartStop
+                      ? $"Logging activated at {DateTime.Now}."
+                      : $"Logging resumed at {DateTime.Now}."
+                    );
+                },
+                s => {
+                    bLoggingEnabled = false;
+                    loggingStatusLB.Text = (
+                        s == FlightLoggingOrchestrator.Source.StartStop
+                      ? $"Logging stopped at {DateTime.Now}."
+                      : $"Logging paused at {DateTime.Now}."
+                    );
+                },
+                s => StopLoggingAction()
+            );
+
+            orchestrator.IsAutomatic = AutomaticLoggingCB.Checked;
+
+            return orchestrator;
+        }
+
         private void LogWriteFreqTB_KeyPress(object sender, KeyPressEventArgs e)
         {
             // only want numbers
@@ -315,28 +257,28 @@ namespace FS2020PlanePath
             }
         }
 
-        private void ToggleLoggingBtn_Click(object sender, EventArgs e)
+        private void StartFlightLoggingToggleBtn_Click(object sender, EventArgs e)
         {
-            // set the last time a record was written to mintime
-            dtLastDataRecord = DateTime.MinValue;
-            if (flightLogUiOrchestrator.StartButton.IsEnabled)
+            if (flightLogOrchestrator.EnableButton.State == ToggleState.Out)
             {
-                flightLogUiOrchestrator.Start();
+                flightLogOrchestrator.Start();
             } else
             {
-                flightLogUiOrchestrator.Stop();
+                flightLogOrchestrator.Stop();
             }
+            // set the last time a record was written to mintime
+            dtLastDataRecord = DateTime.MinValue;
         }
 
-        private void TogglePauseLoggingBtn_Click(object sender, EventArgs e)
+        private void PauseFlightLoggingToggleBtn_Click(object sender, EventArgs e)
         {
-            if (flightLogUiOrchestrator.PauseButton.IsEnabled)
+            if (flightLogOrchestrator.PauseButton.State == ToggleState.Out)
             {
-                flightLogUiOrchestrator.Pause();
+                flightLogOrchestrator.Pause();
             }
             else
             {
-                flightLogUiOrchestrator.Resume();
+                flightLogOrchestrator.Resume();
             }
         }
 
@@ -364,23 +306,28 @@ namespace FS2020PlanePath
         // on prefrences
         public void HandleFlightData(FlightDataStructure simPlaneData)
         {
-            if (flightLogUiOrchestrator.IsAutomaticMode)
+            if (flightLogOrchestrator.IsAutomatic)
             {
                 // automatic management of logging mode according to ground velocity
                 int userLoggingThresholdGroundVelocity = Parser.Convert(
-                    LoggingThresholdGroundVelTB.Text, 
-                    s => Convert.ToInt32(s), 
+                    LoggingThresholdGroundVelTB.Text,
+                    s => Convert.ToInt32(s),
                     () => FS2020_SQLLiteDB.DEFAULT_AUTOMATIC_LOGGING_THRESHOLD
                 );
                 if (simPlaneData.ground_velocity >= userLoggingThresholdGroundVelocity)
                 {
-                    // TODO: optimize and fire this only on transition
-                    flightLogUiOrchestrator.ThresholdReached();
+                    if (!bLoggingThresholdReached)
+                    {
+                        flightLogOrchestrator.ThresholdReached();
+                        bLoggingThresholdReached = true;
+                    }
                 }
-                else
-                {
-                    // TODO: optimize and fire this only on transition
-                    flightLogUiOrchestrator.ThresholdMissed();
+                else {
+                    if (bLoggingThresholdReached)
+                    {
+                        flightLogOrchestrator.ThresholdMissed();
+                        bLoggingThresholdReached = false;
+                    }
                 }
             }
 
@@ -965,7 +912,7 @@ namespace FS2020PlanePath
         private void AutomaticLoggingCB_Click(object sender, EventArgs e)
         {
             LoggingThresholdGroundVelTB.Enabled = AutomaticLoggingCB.Checked;
-            flightLogUiOrchestrator.IsAutomaticMode = AutomaticLoggingCB.Checked;
+            flightLogOrchestrator.IsAutomatic = AutomaticLoggingCB.Checked;
         }
 
         private void LiveCameraCB_CheckedChanged(object sender, EventArgs eventArgs)

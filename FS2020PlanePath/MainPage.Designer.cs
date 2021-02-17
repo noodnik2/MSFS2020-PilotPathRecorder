@@ -150,7 +150,7 @@
             this.StartLoggingBtn.TabIndex = 11;
             this.StartLoggingBtn.Text = "SL";
             this.StartLoggingBtn.UseVisualStyleBackColor = true;
-            this.StartLoggingBtn.Click += new System.EventHandler(this.ToggleLoggingBtn_Click);
+            this.StartLoggingBtn.Click += new System.EventHandler(this.StartFlightLoggingToggleBtn_Click);
             // 
             // CreateKMLButton
             // 
@@ -171,7 +171,7 @@
             this.PauseLoggingBtn.TabIndex = 12;
             this.PauseLoggingBtn.Text = "PL";
             this.PauseLoggingBtn.UseVisualStyleBackColor = true;
-            this.PauseLoggingBtn.Click += new System.EventHandler(this.TogglePauseLoggingBtn_Click);
+            this.PauseLoggingBtn.Click += new System.EventHandler(this.PauseFlightLoggingToggleBtn_Click);
             // 
             // RetrySimConnectionBtn
             // 

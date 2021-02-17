@@ -172,7 +172,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="src\ui\FlightLoggingUiOrchestration.cs" />
+    <Compile Include="src\ui\FlightLoggingOrchestrator.cs" />
     <Compile Include="GeoCalcUtils.cs" />
     <Compile Include="JsonFilesystemRegistry.cs" />
     <Compile Include="LiveCamRegistry.cs" />
@@ -208,7 +208,7 @@
     </Compile>
     <Compile Include="SerializationUtils.cs" />
     <Compile Include="TemplateRenderers.cs" />
-    <Compile Include="UserDialogUtils.cs" />
+    <Compile Include="UserInterfaceUtils.cs" />
     <EmbeddedResource Include="MainPage.resx">
       <DependentUpon>MainPage.cs</DependentUpon>
       <SubType>Designer</SubType>

@@ -4,30 +4,31 @@ using Xunit;
 namespace FS2020PlanePath.XUnitTests
 {
 
-    public class TestFlightLoggingButtonModel : FlightLoggingButtonModel
+    public class FlightLoggingTestButtonModel : IButtonStateModel<ToggleState>
     {
 
-        public TestFlightLoggingButtonModel(bool initialEnabledState)
+        public FlightLoggingTestButtonModel(bool initialEnablement)
         {
-            IsEnabled = initialEnabledState;
+            State = ToggleState.Out;
+            IsEnabled = initialEnablement;
         }
 
         public bool IsEnabled { get; set; }
 
+        public ToggleState State { get; set; }
+
     }
 
-    public class FlightLoggingUiOrchestrationTests
+    public class FlightLoggingOrchestratorTests
     {
 
-        public FlightLoggingUiOrchestrationTests()
+        public FlightLoggingOrchestratorTests()
         {
             actionNames = new List<string>();
             actionSources = new List<int>();
-            orchestrator = new FlightLogUiOrchestrator(
-                new TestFlightLoggingButtonModel(true),
-                new TestFlightLoggingButtonModel(false),
-                new TestFlightLoggingButtonModel(false),
-                new TestFlightLoggingButtonModel(false),
+            orchestrator = new FlightLoggingOrchestrator(
+                new FlightLoggingTestButtonModel(true),
+                new FlightLoggingTestButtonModel(false),
                 s => registerAction(s, "i"),
                 s => registerAction(s, "e"),
                 s => registerAction(s, "d"),
@@ -35,15 +36,15 @@ namespace FS2020PlanePath.XUnitTests
             );
         }
 
-        private void registerAction(FlightLogUiOrchestrator.Source actionSource, string actionName)
+        private void registerAction(FlightLoggingOrchestrator.Source actionSource, string actionName)
         {
             actionNames.Add(actionName);
             actionSources.Add((int) actionSource);
         }
 
+        private FlightLoggingOrchestrator orchestrator;
         private List<string> actionNames;
         private List<int> actionSources;
-        private FlightLogUiOrchestrator orchestrator;
 
         /// <summary>
         /// Tests expected initial configuration.
@@ -51,7 +52,7 @@ namespace FS2020PlanePath.XUnitTests
         [Fact]
         public void StartupState()
         {
-            Assert.False(orchestrator.IsAutomaticMode);
+            Assert.False(orchestrator.IsAutomatic);
             AssertInitialButtonState();
             AssertActions("");
         }
@@ -63,20 +64,20 @@ namespace FS2020PlanePath.XUnitTests
         [Fact]
         public void NonAutomaticFullNormalCase()
         {
-            orchestrator.IsAutomaticMode = false;
+            orchestrator.IsAutomatic = false;
             AssertActions("");
             orchestrator.ThresholdReached();
             orchestrator.ThresholdMissed();
             AssertActions("");
-            Assert.False(orchestrator.IsAutomaticMode);
+            Assert.False(orchestrator.IsAutomatic);
             AssertInitialButtonState();
             orchestrator.Start();
             AssertActions("i,e");
             orchestrator.Pause();
-            AssertButtonState(false, true, false, true);
+            AssertButtonState(true,  true);
             AssertActions("i,e,d");
             orchestrator.Resume();
-            AssertButtonState(false, true, true, false);
+            AssertButtonState(true, true);
             AssertActions("i,e,d,e");
             orchestrator.Stop();
             AssertActions("i,e,d,e,d,f");
@@ -90,15 +91,15 @@ namespace FS2020PlanePath.XUnitTests
         [Fact]
         public void AutomaticToNonAutomaticSimpleCase()
         {
-            orchestrator.IsAutomaticMode = true;
+            orchestrator.IsAutomatic = true;
             AssertInitialButtonState();
             orchestrator.ThresholdReached();
             AssertActions("i,e");
-            orchestrator.IsAutomaticMode = false;
+            orchestrator.IsAutomatic = false;
             orchestrator.ThresholdMissed();
             AssertActions("i,e");
             AssertSources("0,0");
-            AssertButtonState(false, true, true, false);
+            AssertButtonState(true, true);
         }
 
         /// <summary>
@@ -107,15 +108,15 @@ namespace FS2020PlanePath.XUnitTests
         [Fact]
         public void AutomaticUserStartedThresholdReachedThenMissedThenUserStopped()
         {
-            orchestrator.IsAutomaticMode = true;
-            Assert.True(orchestrator.IsAutomaticMode);
+            orchestrator.IsAutomatic = true;
+            Assert.True(orchestrator.IsAutomatic);
             orchestrator.Start();
             AssertActions("i,e");
             orchestrator.ThresholdReached();
             AssertActions("i,e");
             orchestrator.ThresholdMissed();
             AssertActions("i,e");
-            AssertButtonState(false, true, true, false);
+            AssertButtonState(true, true);
             orchestrator.Stop();
             AssertInitialButtonState();
             AssertSources("0,0,0,0");
@@ -128,19 +129,19 @@ namespace FS2020PlanePath.XUnitTests
         [Fact]
         public void NonAutomaticUserStartedToAutomaticThresholdMissed()
         {
-            orchestrator.IsAutomaticMode = false;
-            Assert.False(orchestrator.IsAutomaticMode);
+            orchestrator.IsAutomatic = false;
+            Assert.False(orchestrator.IsAutomatic);
             AssertInitialButtonState();
             orchestrator.Start();
             AssertActions("i,e");
             orchestrator.ThresholdReached();
             AssertActions("i,e");
-            AssertButtonState(false, true, true, false);
-            orchestrator.IsAutomaticMode = true;
+            AssertButtonState(true, true);
+            orchestrator.IsAutomatic = true;
             orchestrator.ThresholdMissed();
             AssertActions("i,e");
             AssertSources("0,0");
-            AssertButtonState(false, true, true, false);
+            AssertButtonState(true, true);
         }
 
         /// <summary>
@@ -150,8 +151,8 @@ namespace FS2020PlanePath.XUnitTests
         [Fact]
         public void AutomaticThresholdReachedUserStoppedThresholdMissedThenReached()
         {
-            orchestrator.IsAutomaticMode = true;
-            Assert.True(orchestrator.IsAutomaticMode);
+            orchestrator.IsAutomatic = true;
+            Assert.True(orchestrator.IsAutomatic);
             orchestrator.ThresholdReached();
             AssertActions("i,e");
             orchestrator.Stop();
@@ -169,8 +170,8 @@ namespace FS2020PlanePath.XUnitTests
         [Fact]
         public void AutomaticThresholdReachedThenMissed()
         {
-            orchestrator.IsAutomaticMode = true;
-            Assert.True(orchestrator.IsAutomaticMode);
+            orchestrator.IsAutomatic = true;
+            Assert.True(orchestrator.IsAutomatic);
             AssertActions("");
             orchestrator.ThresholdReached();
             AssertActions("i,e");
@@ -185,17 +186,17 @@ namespace FS2020PlanePath.XUnitTests
         [Fact]
         public void AutomaticThresholdReachedUserPausedThresholdMissed()
         {
-            orchestrator.IsAutomaticMode = true;
-            Assert.True(orchestrator.IsAutomaticMode);
+            orchestrator.IsAutomatic = true;
+            Assert.True(orchestrator.IsAutomatic);
             orchestrator.ThresholdReached();
             AssertActions("i,e");
-            AssertButtonState(false, true, true, false);
+            AssertButtonState(true, true);
             orchestrator.Pause();
-            AssertButtonState(false, true, false, true);
+            AssertButtonState(true, true);
             AssertActions("i,e,d");
             orchestrator.ThresholdMissed();
             AssertActions("i,e,d");
-            AssertButtonState(false, true, false, true);
+            AssertButtonState(true, true);
             orchestrator.Stop();
             AssertInitialButtonState();
             AssertActions("i,e,d,d,f");
@@ -209,7 +210,7 @@ namespace FS2020PlanePath.XUnitTests
         [Fact]
         public void AutomaticThresholdReachedUserPausedThresholdMissedUserResumed()
         {
-            orchestrator.IsAutomaticMode = true;
+            orchestrator.IsAutomatic = true;
             orchestrator.ThresholdReached();
             orchestrator.Pause();
             orchestrator.ThresholdMissed();
@@ -227,7 +228,7 @@ namespace FS2020PlanePath.XUnitTests
         [Fact]
         public void AutomaticOperationRestoredAfterUserStop()
         {
-            orchestrator.IsAutomaticMode = true;
+            orchestrator.IsAutomatic = true;
             orchestrator.Start();
             AssertActions("i,e");
             orchestrator.ThresholdReached();
@@ -243,7 +244,7 @@ namespace FS2020PlanePath.XUnitTests
             AssertActions("i,e,d,f");
             AssertInitialButtonState();
             orchestrator.ThresholdReached();
-            AssertButtonState(false, true, true, false);
+            AssertButtonState(true, true);
             AssertActions("i,e,d,f,i,e");
             orchestrator.ThresholdMissed();
             AssertActions("i,e,d,f,i,e,d,f");
@@ -263,15 +264,13 @@ namespace FS2020PlanePath.XUnitTests
 
         private void AssertInitialButtonState()
         {
-            AssertButtonState(true, false, false, false);
+            AssertButtonState(true, false);
         }
 
-        private void AssertButtonState(bool start, bool stop, bool pause, bool resume)
+        private void AssertButtonState(bool start, bool pause)
         {
-            Assert.Equal(start, orchestrator.StartButton.IsEnabled);
-            Assert.Equal(stop, orchestrator.StopButton.IsEnabled);
+            Assert.Equal(start, orchestrator.EnableButton.IsEnabled);
             Assert.Equal(pause, orchestrator.PauseButton.IsEnabled);
-            Assert.Equal(resume, orchestrator.ResumeButton.IsEnabled);
         }
 
     }

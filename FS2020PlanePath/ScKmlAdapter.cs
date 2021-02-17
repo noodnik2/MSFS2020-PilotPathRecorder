@@ -14,7 +14,7 @@ namespace FS2020PlanePath
 
         public ScKmlAdapter(KmlCameraParameterValues kmlCameraParameterValues)
         {
-            this.kmlCameraValues = kmlCameraParameterValues;
+            kmlCameraValues = kmlCameraParameterValues;
         }
 
         public void Update(

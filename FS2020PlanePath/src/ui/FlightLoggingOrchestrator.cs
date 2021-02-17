@@ -4,12 +4,7 @@ using System.Diagnostics;
 namespace FS2020PlanePath
 {
 
-    public interface FlightLoggingButtonModel
-    {
-        bool IsEnabled { get; set; }
-    }
-
-    public class FlightLogUiOrchestrator
+    public class FlightLoggingOrchestrator
     {
 
         public enum Source
@@ -18,13 +13,10 @@ namespace FS2020PlanePath
             PauseResume
         }
 
+        public bool IsAutomatic { get; set; }
 
-        public bool IsAutomaticMode { get; set; }
-
-        public FlightLoggingButtonModel StartButton { get; private set; }
-        public FlightLoggingButtonModel StopButton { get; private set; }
-        public FlightLoggingButtonModel PauseButton { get; private set; }
-        public FlightLoggingButtonModel ResumeButton { get; private set; }
+        public IButtonStateModel<ToggleState> EnableButton { get; private set; }
+        public IButtonStateModel<ToggleState> PauseButton { get; private set; }
         public Action<Source> InitializeLoggingAction { get; private set; }
         public Action<Source> EnableLoggingAction { get; private set; }
         public Action<Source> DisableLoggingAction { get; private set; }
@@ -32,21 +24,17 @@ namespace FS2020PlanePath
 
         private bool userStarted;
 
-        public FlightLogUiOrchestrator(
-            FlightLoggingButtonModel startButton,
-            FlightLoggingButtonModel stopButton,
-            FlightLoggingButtonModel pauseButton,
-            FlightLoggingButtonModel resumeButton,
+        public FlightLoggingOrchestrator(
+            IButtonStateModel<ToggleState> enableButton,
+            IButtonStateModel<ToggleState> pauseButton,
             Action<Source> initializeLoggingAction,
             Action<Source> enableLoggingAction,
             Action<Source> disableLoggingAction,
             Action<Source> flushLoggingAction
         )
         {
-            this.StartButton = startButton;
-            this.StopButton = stopButton;
+            this.EnableButton = enableButton;
             this.PauseButton = pauseButton;
-            this.ResumeButton = resumeButton;
             this.InitializeLoggingAction = initializeLoggingAction;
             this.EnableLoggingAction = enableLoggingAction;
             this.DisableLoggingAction = disableLoggingAction;
@@ -55,7 +43,7 @@ namespace FS2020PlanePath
 
         public void ThresholdReached()
         {
-            if (IsAutomaticMode && StartButton.IsEnabled)
+            if (IsAutomatic && EnableButton.State == ToggleState.Out)
             {
                 StartAction(false);
             }
@@ -63,7 +51,12 @@ namespace FS2020PlanePath
 
         public void ThresholdMissed()
         {
-            if (IsAutomaticMode && !userStarted && PauseButton.IsEnabled && StopButton.IsEnabled)
+            if (
+                IsAutomatic 
+             && !userStarted 
+             && EnableButton.State == ToggleState.In
+             && PauseButton.State == ToggleState.Out
+            )
             {
                 StopAction();
             }
@@ -91,48 +84,39 @@ namespace FS2020PlanePath
 
         private void StartAction(bool fromUi)
         {
-            AssertButtonEnabled(StartButton);
+            Debug.Assert(EnableButton.State == ToggleState.Out);
             InitializeLoggingAction(Source.StartStop);
             EnableLoggingAction(Source.StartStop);
-            StartButton.IsEnabled = false;
-            ResumeButton.IsEnabled = false;
-            StopButton.IsEnabled = true;
+            EnableButton.State = ToggleState.In;
+            PauseButton.State = ToggleState.Out;
             PauseButton.IsEnabled = true;
             userStarted = fromUi;
         }
 
         private void StopAction()
         {
-            AssertButtonEnabled(StopButton);
+            Debug.Assert(EnableButton.State == ToggleState.In);
             DisableLoggingAction(Source.StartStop);
             FlushLoggingAction(Source.StartStop);
-            StopButton.IsEnabled = false;
+            EnableButton.State = ToggleState.Out;
+            PauseButton.State = ToggleState.Out;
             PauseButton.IsEnabled = false;
-            ResumeButton.IsEnabled = false;
-            StartButton.IsEnabled = true;
         }
 
         private void PauseAction()
         {
-            AssertButtonEnabled(StopButton);
-            AssertButtonEnabled(PauseButton);
+            Debug.Assert(EnableButton.State == ToggleState.In);
+            Debug.Assert(PauseButton.State == ToggleState.Out);
             DisableLoggingAction(Source.PauseResume);
-            PauseButton.IsEnabled = false;
-            ResumeButton.IsEnabled = true;
+            PauseButton.State = ToggleState.In;
         }
 
         private void ResumeAction()
         {
-            AssertButtonEnabled(StopButton);
-            AssertButtonEnabled(ResumeButton);
+            Debug.Assert(EnableButton.State == ToggleState.In);
+            Debug.Assert(PauseButton.State == ToggleState.In);
             EnableLoggingAction(Source.PauseResume);
-            ResumeButton.IsEnabled = false;
-            PauseButton.IsEnabled = true;
-        }
-
-        private void AssertButtonEnabled(FlightLoggingButtonModel buttonModel)
-        {
-            Debug.Assert(buttonModel.IsEnabled, $"button({buttonModel}) is disabled");
+            PauseButton.State = ToggleState.Out;
         }
 
     }

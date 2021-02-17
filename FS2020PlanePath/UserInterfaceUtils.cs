@@ -1,9 +1,58 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace FS2020PlanePath
 {
+
+    public enum ToggleState
+    {
+        Out,
+        In
+    }
+
+    public interface IButtonStateModel<ButtonState>
+    {
+        ButtonState State { get; set; }
+
+        bool IsEnabled { get; set; }
+    }
+
+    public class MultiButtonStateModel<ButtonState> : IButtonStateModel<ButtonState> where ButtonState : Enum
+    {
+        private Button button;
+        private string[] typeNames;
+        private ButtonState type;
+
+        public MultiButtonStateModel(Button button, bool enabled, ButtonState type, params string[] typeNames)
+        {
+            Debug.Assert(typeof(ButtonState).GetEnumValues().Length == typeNames.Length);
+            this.button = button;
+            this.typeNames = typeNames;
+            button.Enabled = enabled;
+            IsEnabled = button.Enabled;
+            State = type;
+        }
+
+        public ButtonState State
+        {
+            get => type;
+            set
+            {
+                type = value;
+                button.Text = typeNames[Convert.ToInt32(type)];
+            }
+
+        }
+
+        public bool IsEnabled
+        {
+            get => button.Enabled;
+            set => button.Enabled = value;
+        }
+    }
+
     public static class UserDialogUtils
     {
 
