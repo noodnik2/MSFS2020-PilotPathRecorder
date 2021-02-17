@@ -16,13 +16,16 @@ namespace FS2020PlanePath
             "|All files (*.*)|*.*"
         );
 
-        private KmlLiveCam _kmlLiveCam;
+        private KmlLiveCam initialKmlLiveCam;
+        private KmlLiveCam kmlLiveCam;
+        private bool textChanged;
 
-        public KmlLiveCam KmlLiveCam => _kmlLiveCam;
+        public KmlLiveCam KmlLiveCam => kmlLiveCam;
 
         public KmlLiveCamEditorForm(string alias, string selectedLensName, KmlLiveCam kmlLiveCam) {
             InitializeComponent();
-            _kmlLiveCam = kmlLiveCam;
+            this.kmlLiveCam = kmlLiveCam;
+            initialKmlLiveCam = this.kmlLiveCam;
             Text = $"MSFS2020-PilotPathRecorder LiveCam Editor - '{alias}'";
             kmlLiveCam.LensNames.ToList().ForEach(
                 lensName => editorPaneTC.TabPages.Add(
@@ -97,8 +100,15 @@ namespace FS2020PlanePath
                 return false;
             }
 
-            _kmlLiveCam = updatedKmlLiveCam;
+            kmlLiveCam = updatedKmlLiveCam;
+            textChanged = false;
+
             return true;
+        }
+
+        private void Handle_TextChanged_Event(object sender, EventArgs e)
+        {
+            textChanged = true;
         }
 
         private void Handle_FileOpenMenuItemSelected_Event(object sender, EventArgs e)
@@ -219,6 +229,7 @@ See: https://developers.google.com/kml/documentation/kmlreference"
             newTextBox.TabStop = false;
             newTextBox.Text = template;
             newTextBox.Validating += new CancelEventHandler(this.Handle_KmlTextValidation_Event);
+            newTextBox.TextChanged += new EventHandler(this.Handle_TextChanged_Event);
 
             newTabPage.Controls.Add(newTextBox);
 
@@ -295,6 +306,22 @@ See: https://developers.google.com/kml/documentation/kmlreference"
             }
         }
 
+        private void KmlLiveCamEditorForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (DialogResult == DialogResult.Cancel) {
+                if (!initialKmlLiveCam.Equals(kmlLiveCam) || textChanged)
+                {
+                    if (
+                        !UserDialogUtils.obtainConfirmation(
+                            "Confirm Abandon Changes",
+                            "Changes will be lost.\nDo you wish to continue?"
+                        )
+                    )
+                    {
+                        e.Cancel = true;
+                    }
+                }
+            }
+        }
     }
-
 }

@@ -94,14 +94,14 @@ namespace FS2020PlanePath
             // openToolStripMenuItem
             // 
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
-            this.openToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.openToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
             this.openToolStripMenuItem.Text = "&Load...";
             this.openToolStripMenuItem.Click += new System.EventHandler(this.Handle_FileOpenMenuItemSelected_Event);
             // 
             // saveToolStripMenuItem
             // 
             this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            this.saveToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.saveToolStripMenuItem.Size = new System.Drawing.Size(123, 22);
             this.saveToolStripMenuItem.Text = "Save &As...";
             this.saveToolStripMenuItem.Click += new System.EventHandler(this.Handle_FileSaveMenuItemSelected_Event);
             // 
@@ -181,6 +181,7 @@ namespace FS2020PlanePath
             this.Name = "KmlLiveCamEditorForm";
             this.Text = "LiveCam Editor";
             this.toolTip1.SetToolTip(this, "Allows customization of the LiveCam Template");
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.KmlLiveCamEditorForm_FormClosing);
             this.HelpRequested += new System.Windows.Forms.HelpEventHandler(this.Handle_HelpRequested_Event);
             this.menuSP.ResumeLayout(false);
             this.menuSP.PerformLayout();

@@ -76,8 +76,9 @@ namespace FS2020PlanePath
             DialogResult confirmationAnswer = MessageBox.Show(
                 details,
                 caption,
-                MessageBoxButtons.YesNo,
-                icon
+                MessageBoxButtons.YesNoCancel,
+                icon,
+                MessageBoxDefaultButton.Button3
             );
             return (DialogResult.Yes == confirmationAnswer);
         }

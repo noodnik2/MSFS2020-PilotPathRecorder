@@ -373,10 +373,11 @@ namespace FS2020PlanePath
                                                      new FlightWaypointData(simPlaneData.gps_wp_next_latitude, simPlaneData.gps_wp_next_longitude, simPlaneData.gps_wp_next_altitude, simPlaneData.gps_wp_next_id),
                                                      simPlaneData.gps_flight_plan_wp_index, simPlaneData.gps_flight_plan_wp_count);
 
-                    scKmlAdapter.Update(simPlaneData, nCurrentFlightID, dtLastDataRecord.Ticks);
-
                 }
+
             }
+
+            scKmlAdapter.Update(simPlaneData, nCurrentFlightID, dtLastDataRecord.Ticks);
         }
 
         // function is called from the retrieval of information from the simconnect and hold the aircraft name info
