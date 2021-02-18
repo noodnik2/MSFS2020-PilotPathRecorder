@@ -24,6 +24,50 @@ namespace FS2020PlanePath
 
     }
 
+    public static class FilesystemSerializer
+    {
+
+        public static bool TryDeserializeFromFile<T>(
+            string fileName, 
+            ISerializer<T, string> deserializer,  
+            out T value
+        )
+        {
+            try
+            {
+                value = deserializer.Deserialize(File.ReadAllText(fileName));
+                Console.WriteLine($"loaded({fileName})");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Can't load({fileName}); {ex.Message}");
+                value = default(T);
+                return false;
+            }
+        }
+
+        public static bool TrySerializeToFile<T>(
+            string fileName, 
+            ISerializer<T, string> serializer,
+            T value
+        )
+        {
+            try
+            {
+                File.WriteAllText(fileName, serializer.Serialize(value));
+                Console.WriteLine($"saved({fileName})");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Can't save({fileName}); {ex.Message}");
+                return false;
+            }
+        }
+
+    }
+
     public class JsonSerializer<V> : ISerializer<V, string>
     {
         public V Deserialize(string s)

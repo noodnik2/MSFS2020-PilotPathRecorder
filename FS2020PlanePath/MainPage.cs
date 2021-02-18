@@ -982,7 +982,16 @@ namespace FS2020PlanePath
             }
 
             KmlLiveCam liveCam = liveCamRegistry.LoadByAlias(alias);
-            using (KmlLiveCamEditorForm kmlEditorForm = new KmlLiveCamEditorForm(alias, lensName, liveCam))
+            using (
+                KmlLiveCamEditorForm kmlEditorForm = new KmlLiveCamEditorForm(
+                    alias, 
+                    lensName, 
+                    liveCam,
+                    lcfn => loadLiveCamFromFile(lcfn),
+                    (lcfn, lc) => saveLiveCamToFile(lcfn, lc),
+                    a => !liveCamRegistry.TryGetById(a, out _)
+                )
+            )
             {
 
                 if (kmlEditorForm.ShowDialog(this) != DialogResult.OK)
@@ -991,14 +1000,50 @@ namespace FS2020PlanePath
                 }
 
                 KmlLiveCam updatedKmlLiveCam = kmlEditorForm.KmlLiveCam;
-                if (!updatedKmlLiveCam.Equals(liveCam))
+                if (!updatedKmlLiveCam.Equals(liveCam) || alias != kmlEditorForm.Alias)
                 {
-                    liveCamRegistry.Save(alias, updatedKmlLiveCam);
-                    UserDialogUtils.displayMessage("Live Camera Update", $"Live Camera '{alias}' Definition was Changed");
+                    liveCamRegistry.Save(kmlEditorForm.Alias, updatedKmlLiveCam);
+                    UserDialogUtils.displayMessage(
+                        "Live Camera Update", 
+                        $"Live Camera '{kmlEditorForm.Alias}' Definition was Saved"
+                    );
+                    if (alias != kmlEditorForm.Alias)
+                    {
+                        LoadLiveCams();
+                    }
                 }
 
             }
 
+        }
+
+        private void saveLiveCamToFile(string liveCamFilename, KmlLiveCam lc)
+        {
+            if (
+                !FilesystemSerializer.TrySerializeToFile(
+                    liveCamFilename, 
+                    new JsonSerializer<LiveCamEntity>(), 
+                    new LiveCamEntity(lc)
+                )
+            )
+            {
+                throw new Exception($"Could not save KmlLiveCam to '{liveCamFilename}'");
+            }
+        }
+
+        private KmlLiveCam loadLiveCamFromFile(string liveCamFilename)
+        {
+            LiveCamEntity liveCamEntity;
+            if (
+                FilesystemSerializer.TryDeserializeFromFile(
+                    liveCamFilename, 
+                    new JsonSerializer<LiveCamEntity>(), 
+                    out liveCamEntity
+                )
+            ) {
+                return new KmlLiveCam(liveCamEntity);
+            }
+            throw new Exception($"Could not load KmlLiveCam from '{liveCamFilename}'");
         }
 
         private void geLinkBT_Click(object sender, EventArgs e)
@@ -1115,6 +1160,7 @@ namespace FS2020PlanePath
             }
 
             liveCamRegistry.Delete(alias);
+            LoadLiveCams();
         }
 
         private string malformedUriErrorMessage(string url, UriFormatException ufe)
