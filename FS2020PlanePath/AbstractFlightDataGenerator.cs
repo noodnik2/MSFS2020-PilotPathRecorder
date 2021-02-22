@@ -18,7 +18,7 @@ namespace FS2020PlanePath
             {
                 startingTimestamp = nextFlightPathSegment[segmentSize - 1].timestamp + 1;
             }
-            Console.WriteLine($"delivering({segmentSize}) paths from({initialTimestamp}) to({startingTimestamp})");
+            //Console.WriteLine($"delivering({segmentSize}) paths from({initialTimestamp}) to({startingTimestamp})");
             return nextFlightPathSegment.GetEnumerator();
         }
 

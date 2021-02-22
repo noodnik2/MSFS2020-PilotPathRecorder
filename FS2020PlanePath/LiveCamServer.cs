@@ -178,7 +178,7 @@ namespace FS2020PlanePath
             {
                 if (route.IsSupported(request))
                 {
-                    Console.WriteLine($"handling path({request.path})");
+                    //Console.WriteLine($"handling /*path*/({request.path})");
                     return route.Handler(request);
                 }
             }

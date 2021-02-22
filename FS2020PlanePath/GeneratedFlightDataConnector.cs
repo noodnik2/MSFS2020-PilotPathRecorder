@@ -28,7 +28,9 @@ namespace FS2020PlanePath
             this.flightDataGenerator = flightDataGenerator;
             timer = new Timer();
             timer.Enabled = false;
-            timer.Interval = 5000;  // TODO parameterize
+            // NOTE: once per second matches current configuration of the SimConnect connector
+            // (see: SIMCONNECT_PERIOD.SECOND)
+            timer.Interval = 1000;  
             timer.Tick += TimerTickHandler;
         }
 

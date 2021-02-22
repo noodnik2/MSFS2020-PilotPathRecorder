@@ -193,7 +193,7 @@
     <Compile Include="FlightDataConnector.cs" />
     <Compile Include="AbstractFlightDataGenerator.cs" />
     <Compile Include="ReplayFlightDataGenerator.cs" />
-    <Compile Include="RandomWalkFlightDataGenerator.cs" />
+    <Compile Include="FlightDataGenerator.cs" />
     <Compile Include="GeneratedFlightDataConnector.cs" />
     <Compile Include="SimConnectFlightDataConnector.cs" />
     <Compile Include="MultiTrackKmlGenerator.cs" />

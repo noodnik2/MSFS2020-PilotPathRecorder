@@ -139,7 +139,29 @@ namespace FS2020PlanePath
                         this,
                         flightDataHandler,
                         environmentDataHandler,
-                        new RandomWalkFlightDataGenerator()
+                        new FlightDataGenerator(  
+                            "RandomWalk",
+                            new FlightPathData  // TODO - let user set these per invocation
+                            {
+                                timestamp = DateTime.Now.Ticks,
+                                longitude = -121.6601805,
+                                latitude = 38.0282797,
+                                altitude = 3500,
+                                plane_heading_true = 200,
+                                ground_velocity = 120
+                            },
+                            new RandomWalkFlightAdvancer(
+                                new RandomWalkFlightAdvancerParameters() // TODO - let user set these per invocation
+                                {
+                                    SamplesPerSecond = 2,      // at 2 samples per second; 
+                                    HeadingChangeScale = 1.5,  // 3 degrees per second
+                                    VelocityChangeScale = 0.5, // 1 knot per second
+                                    AltitudeChangeScale = 10,  // 20' per second => 1200 fpm
+                                    RollingCount = 5           // rolling average of 5 samples
+                                }
+                            )
+                            .advance
+                        )
                     )
                 )
                 .build()
@@ -377,6 +399,7 @@ namespace FS2020PlanePath
 
             }
 
+            //Console.WriteLine($"scUpdate latLon({simPlaneData.latitude}, {simPlaneData.longitude})");
             scKmlAdapter.Update(simPlaneData, nCurrentFlightID, dtLastDataRecord.Ticks);
         }
 
@@ -386,6 +409,7 @@ namespace FS2020PlanePath
             if (bLoggingEnabled == true)
             {
                 nCurrentFlightID = FlightPathDB.WriteFlight(aircraft);
+                Console.WriteLine($"set nCurrentFlightID({nCurrentFlightID})");
             }
         }
 
