@@ -10,7 +10,7 @@ jobs:
 
     strategy:
       matrix:
-        configuration: [Debug, Release]
+        configuration: [Release]
 
     runs-on: windows-latest
 
@@ -46,8 +46,12 @@ jobs:
 #        name: Installer
 #        path: bin\Release\Publish
 
-
-
+     - name: Publish
+       uses: actions/upload-artifact@v2
+       with:
+         name: Deliverable
+         path: bin\Release\app.publish\FS2020PlanePath.exe
+         retention-days: 30
 
 
 
