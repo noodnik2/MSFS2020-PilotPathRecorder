@@ -37,8 +37,8 @@ jobs:
     - name: Build the solution
       run: msbuild FS2020PlanePath.sln /p:Configuration=Release /p:PackageAsSingleFile=true
       
-    - name: Execute unit tests
-      run: dotnet test FS2020PlanePath.XUnitTests/FS2020PlanePath.XUnitTests.csproj --no-restore
+#    - name: Execute unit tests
+#      run: dotnet test FS2020PlanePath.XUnitTests/FS2020PlanePath.XUnitTests.csproj --no-restore
       
     - name: Publish artifacts
       uses: actions/upload-artifact@v1
