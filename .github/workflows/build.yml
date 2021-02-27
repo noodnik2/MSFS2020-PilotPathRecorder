@@ -40,11 +40,11 @@ jobs:
 #    - name: Execute unit tests
 #      run: dotnet test FS2020PlanePath.XUnitTests/FS2020PlanePath.XUnitTests.csproj --no-restore
       
-    - name: Publish artifacts
-      uses: actions/upload-artifact@v1
-      with:
-        name: Installer
-        path: bin\Release\Publish
+#    - name: Publish artifacts
+#      uses: actions/upload-artifact@v1
+#      with:
+#        name: Installer
+#        path: bin\Release\Publish
 
 
 
