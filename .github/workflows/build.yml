@@ -36,9 +36,30 @@ jobs:
     - name: Restore NuGet packages
       run: nuget restore FS2020PlanePath.sln
 
-#     - name: Execute unit tests
-#       run: dotnet test
-      
     - name: Build the solution
-      run: msbuild FS2020PlanePath.sln    
+      run: msbuild FS2020PlanePath.sln /p:Configuration=Release /p:PackageAsSingleFile=true
+      
+    - name: Execute unit tests
+      run: dotnet test FS2020PlanePath.XUnitTests/FS2020PlanePath.XUnitTests.csproj
+      
+    - name: Publish artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: Installer
+        path: bin\Release\Publish
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
