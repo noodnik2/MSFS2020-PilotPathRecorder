@@ -58,13 +58,18 @@ jobs:
         with:
           tag_name: ${{ github.ref }}-${{ github.run_number }}
           release_name: Release ${{ github.ref }}-${{ github.run_number }}
-      - name: Upload Release Assets
+      - name: Build Release Deliverable
+        uses: thedoctor0/zip-release@master
+        with:
+          filename: PilotPathRecorder-n2.zip
+      - name: Upload Release Deliverable
         id: upload_release_asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: .
-#          asset_name: MSFS2020-PilotPathRecorder-n2
-#          asset_content_type: application/zip
+          asset_path: PilotPathRecorder-n2.zip
+#          asset_name: PilotPathRecorder-n2-${{ github.ref }}-${{ github.run_number }}.zip
+          asset_name: PilotPathRecorder-n2-${{ github.run_number }}.zip
+          asset_content_type: application/zip
