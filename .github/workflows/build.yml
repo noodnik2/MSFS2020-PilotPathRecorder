@@ -71,6 +71,7 @@ jobs:
       - name: Build Release Deliverable
         uses: thedoctor0/zip-release@master
         with:
+          path: Release
           filename: PilotPathRecorder-n2.zip
       - name: Upload Release Deliverable
         id: upload_release_asset
