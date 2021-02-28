@@ -50,6 +50,13 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Deliverable
-        path: bin\Release\app.publish\FS2020PlanePath.exe
+        path: |
+          MSFS2020-PilotPathRecorder\MSFS2020-PilotPathRecorder\FS2020PlanePath\bin\Release\app.publish\FS2020PlanePath.exe
+          MSFS2020-PilotPathRecorder\FS2020PlanePath\bin\Release\app.publish\FS2020PlanePath.exe
+          FS2020PlanePath\bin\Release\app.publish\FS2020PlanePath.exe
+          bin\Release\app.publish\FS2020PlanePath.exe
+          Release\app.publish\FS2020PlanePath.exe
+          app.publish\FS2020PlanePath.exe
+          FS2020PlanePath.exe
         retention-days: 30
 
