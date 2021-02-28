@@ -60,11 +60,14 @@ jobs:
 #    - name: Add Release Manifest
 #      run: |
 #        echo "Release ${BUILD_TAG}-${BUILD_BRANCH}-${RELEASE_TIME}" > Release/build_release_manifest
+#    - name: Build Release Deliverable
+#      uses: thedoctor0/zip-release@master
+#      with:
+#        path: FS2020PlanePath/bin/Release
+#        filename: PilotPathRecorder-n2.zip
     - name: Build Release Deliverable
-      uses: thedoctor0/zip-release@master
-      with:
-        path: FS2020PlanePath/bin/Release
-        filename: PilotPathRecorder-n2.zip
+      run: |
+        zip PilotPathRecorder-n2.zip FS2020PlanePath/bin/Release
     - name: Upload Release Deliverable
       id: upload_release_asset
       uses: actions/upload-release-asset@v1
