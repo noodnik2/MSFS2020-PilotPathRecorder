@@ -63,7 +63,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.BUILD_TAG }}
+          tag_name: ${{ env.BUILD_BRANCH }}-${{ env.RELEASE_TIME }}
           release_name: Release ${{ env.BUILD_TAG }}-${{ env.BUILD_BRANCH }}-${{ env.RELEASE_TIME }}
       - name: Add Release Manifest
         run: |
