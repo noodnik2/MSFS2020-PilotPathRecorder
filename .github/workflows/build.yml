@@ -37,6 +37,9 @@ jobs:
     - name: Build the solution
       run: msbuild FS2020PlanePath.sln /p:Configuration=Release
 
+    - name: Where the heck am I?
+      run: pwd
+
 #      run: msbuild FS2020PlanePath.sln /p:Configuration=Release /p:PackageAsSingleFile=true
 
 #    - name: Execute unit tests
