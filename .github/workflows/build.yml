@@ -3,7 +3,7 @@ name: Build
 on:
   push:
     branches: [ 210227-cicr-reset-test ]
-    tags: [ 'v*.*.*' ]
+#    tags: [ 'v*.*.*' ]
 
 jobs:
 
