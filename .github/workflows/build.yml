@@ -38,7 +38,10 @@ jobs:
     - name: Add Build Manifest
       run: |
         git tag
-        git tag > FS2020PlanePath/bin/tag_versions.txt
+        git tag > FS2020PlanePath/bin/Release/tag_versions_all.txt
+        git tag | select-object -last 1 > FS2020PlanePath/bin/Release/tag_version.txt
+        echo ${{ github.ref }} > FS2020PlanePath/bin/Release/github_ref_context.txt
+        echo ${{ env.GITHUB_REF }} > FS2020PlanePath/bin/Release/github_ref_env.txt
 
     - name: Save Assets
       uses: actions/upload-artifact@v2
