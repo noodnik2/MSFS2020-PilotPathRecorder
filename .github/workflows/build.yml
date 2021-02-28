@@ -35,6 +35,6 @@ jobs:
     - name: Publish
       uses: actions/upload-artifact@v2
       with:
-        name: Deliverable
+        name: MSFS2020-PilotPathRecorder-n2
         path: FS2020PlanePath/bin/
         retention-days: 30
