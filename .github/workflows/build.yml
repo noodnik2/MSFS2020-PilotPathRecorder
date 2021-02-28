@@ -51,6 +51,7 @@ jobs:
           echo "BUILD_TAG=$(git describe --tags $(g rev-list --tags --max-count=1))" >> $GITHUB_ENV
           echo "BUILD_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
           echo "RELEASE_TIME=$(date +%y%m%d%H%M)" >> $GITHUB_ENV
+          echo "BUILD_TAG=${BUILD_TAG}, BUILD_BRANCH=${BUILD_BRANCH}, RELEASE_TIME=${RELEASE_TIME}"
       - name: Download Build Artifacts
         uses: actions/download-artifact@v2
         with:
