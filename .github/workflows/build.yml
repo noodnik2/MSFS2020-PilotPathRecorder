@@ -37,10 +37,10 @@ jobs:
     - name: Build the solution
       run: msbuild FS2020PlanePath.sln /p:Configuration=Release
 
-    - name: Where the heck am I?
-      run: |
-        pwd
-        dir FS2020PlanePath/bin
+#    - name: Where the heck am I?
+#      run: |
+#        pwd
+#        dir FS2020PlanePath/bin
 
 #      run: msbuild FS2020PlanePath.sln /p:Configuration=Release /p:PackageAsSingleFile=true
 
@@ -57,6 +57,6 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Deliverable
-        path: FS2020PlanePath/bin/Release/
+        path: FS2020PlanePath/bin/
         retention-days: 30
 
