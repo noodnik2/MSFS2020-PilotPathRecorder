@@ -63,6 +63,9 @@ jobs:
         with:
           tag_name: ${{ env.BUILD_TAG }}
           release_name: Release ${{ env.BUILD_TAG }}-${{ env.BUILD_BRANCH }}-${{ env.RELEASE_TIME }}
+      - name: Add Release Manifes
+        run: |
+          echo "Release ${BUILD_TAG}-${BUILD_BRANCH}-${RELEASE_TIME}" > Release/build_release_manifest
       - name: Build Release Deliverable
         uses: thedoctor0/zip-release@master
         with:
