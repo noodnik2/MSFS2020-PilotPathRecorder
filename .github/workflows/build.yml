@@ -67,7 +67,7 @@ jobs:
 #        filename: PilotPathRecorder-n2.zip
     - name: Build Release Deliverable
       run: |
-        zip PilotPathRecorder-n2.zip FS2020PlanePath/bin/Release
+        Compress-Archive -Path FS2020PlanePath\bin\Release\* -DestinationPath PilotPathRecorder-n2.zip
     - name: Upload Release Deliverable
       id: upload_release_asset
       uses: actions/upload-release-asset@v1
