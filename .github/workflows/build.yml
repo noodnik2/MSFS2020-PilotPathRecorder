@@ -39,37 +39,37 @@ jobs:
         path: FS2020PlanePath/bin/
         retention-days: 30
 
-  release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: MSFS2020-PilotPathRecorder-n2
-      - name: List Artifacts
-        run: ls -ltr
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}-${{ github.run_number }}
-          release_name: Release ${{ github.ref }}-${{ github.run_number }}
-      - name: Build Release Deliverable
-        uses: thedoctor0/zip-release@master
-        with:
-          filename: PilotPathRecorder-n2.zip
-      - name: Upload Release Deliverable
-        id: upload_release_asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: PilotPathRecorder-n2.zip
-#          asset_name: PilotPathRecorder-n2-${{ github.ref }}-${{ github.run_number }}.zip
-          asset_name: PilotPathRecorder-n2-${{ github.run_number }}.zip
-          asset_content_type: application/zip
+#  release:
+#    name: Create Release
+#    runs-on: ubuntu-latest
+#    needs: build
+#    steps:
+#      - name: Download Build Artifacts
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: MSFS2020-PilotPathRecorder-n2
+#      - name: List Artifacts
+#        run: ls -ltr
+#      - name: Create GitHub Release
+#        id: create_release
+#        uses: actions/create-release@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          tag_name: ${{ github.ref }}-${{ github.run_number }}
+#          release_name: Release ${{ github.ref }}-${{ github.run_number }}
+#      - name: Build Release Deliverable
+#        uses: thedoctor0/zip-release@master
+#        with:
+#          filename: PilotPathRecorder-n2.zip
+#      - name: Upload Release Deliverable
+#        id: upload_release_asset
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: PilotPathRecorder-n2.zip
+##          asset_name: PilotPathRecorder-n2-${{ github.ref }}-${{ github.run_number }}.zip
+#          asset_name: PilotPathRecorder-n2-${{ github.run_number }}.zip
+#          asset_content_type: application/zip
