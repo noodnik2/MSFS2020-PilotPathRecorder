@@ -38,7 +38,7 @@ jobs:
     - name: Add Build Manifest
       id: build-manifest
       run: |
-        $env:BUILD_TAG='${{ github.ref }}'.split('/')[2]
+        $env:BUILD_TAG=(-join('${{ github.ref }}'.split('/')[2], '.', '{{ github.run_id }}'))
         echo "$env:BUILD_TAG" > FS2020PlanePath/bin/Release/build_tag.txt
         echo "::set-output name=BUILD_TAG::$env:BUILD_TAG"
 
@@ -55,8 +55,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.build-manifest.outputs.BUILD_TAG }}.${{ github.run_id }}
-        release_name: Release ${{ steps.build-manifest.outputs.BUILD_TAG }}.${{ github.run_id }}
+        tag_name: ${{ steps.build-manifest.outputs.BUILD_TAG }}
+        release_name: Release ${{ steps.build-manifest.outputs.BUILD_TAG }}
 #    - name: Add Release Manifest
 #      run: |
 #        echo "Release ${BUILD_TAG}-${BUILD_BRANCH}-${RELEASE_TIME}" > Release/build_release_manifest
@@ -76,7 +76,7 @@ jobs:
       with:
         upload_url: ${{ steps.create-release.outputs.upload_url }}
         asset_path: PilotPathRecorder-n2.zip
-        asset_name: PilotPathRecorder-n2-${{ steps.build-manifest.outputs.BUILD_TAG }}.${{ github.run_id }}.zip
+        asset_name: PilotPathRecorder-n2-${{ steps.build-manifest.outputs.BUILD_TAG }}.zip
         asset_content_type: application/zip
 
 #  release:
