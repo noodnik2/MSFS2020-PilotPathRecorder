@@ -2,8 +2,10 @@ name: Build
 
 on:
   push:
-    branches: [ 210227-cicr-reset-test ]
-#    tags: [ 'v*.*.*' ]
+    branches:
+    - 210227-cicr-reset-test
+    tags:
+    - '*'
 
 jobs:
 
@@ -32,6 +34,11 @@ jobs:
 
     - name: Build Solution
       run: msbuild FS2020PlanePath.sln /p:Configuration=Release
+
+    - name: Add Build Manifest
+      run: |
+        git tag
+        git tag > FS2020PlanePath/bin/tag_versions.txt
 
     - name: Save Assets
       uses: actions/upload-artifact@v2
