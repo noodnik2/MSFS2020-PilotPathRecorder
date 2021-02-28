@@ -47,11 +47,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Get Current Tag
+#          echo "BUILD_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))" >> $GITHUB_ENV
         run: |
-          echo "BUILD_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))" >> $GITHUB_ENV
+          echo "BUILD_TAG=tn2" >> $GITHUB_ENV
           echo "BUILD_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
           echo "RELEASE_TIME=$(date +%y%m%d%H%M)" >> $GITHUB_ENV
-          echo "BUILD_TAG=${BUILD_TAG}, BUILD_BRANCH=${BUILD_BRANCH}, RELEASE_TIME=${RELEASE_TIME}"
+          echo "BUILD_TAG=${{ env.BUILD_TAG }}, BUILD_BRANCH=${{ env.BUILD_BRANCH }}, RELEASE_TIME=${{ env.RELEASE_TIME }}"
       - name: Download Build Artifacts
         uses: actions/download-artifact@v2
         with:
@@ -64,7 +65,7 @@ jobs:
         with:
           tag_name: ${{ env.BUILD_TAG }}
           release_name: Release ${{ env.BUILD_TAG }}-${{ env.BUILD_BRANCH }}-${{ env.RELEASE_TIME }}
-      - name: Add Release Manifes
+      - name: Add Release Manifest
         run: |
           echo "Release ${BUILD_TAG}-${BUILD_BRANCH}-${RELEASE_TIME}" > Release/build_release_manifest
       - name: Build Release Deliverable
