@@ -15,26 +15,56 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout
+    - name: Checkout Source
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
 
-    - name: Setup MSBuild.exe
+    - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1
       
-    - name: Setup NuGet
+    - name: Setup Package Manager
       uses: NuGet/setup-nuget@v1
         
-    - name: Restore NuGet packages
+    - name: Resolve Dependencies
       run: nuget restore FS2020PlanePath.sln
 
-    - name: Build the solution
+    - name: Build Solution
       run: msbuild FS2020PlanePath.sln /p:Configuration=Release
 
-    - name: Publish
+    - name: Save Assets
       uses: actions/upload-artifact@v2
       with:
         name: MSFS2020-PilotPathRecorder-n2
         path: FS2020PlanePath/bin/
         retention-days: 30
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: MSFS2020-PilotPathRecorder-n2
+      - name: List Artifacts
+        run: ls -ltr
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}-${{ github.run_number }}
+          release_name: Release ${{ github.ref }}-${{ github.run_number }}
+      - name: Upload Release Assets
+        id: upload_release_asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: .
+#          asset_name: MSFS2020-PilotPathRecorder-n2
+#          asset_content_type: application/zip
