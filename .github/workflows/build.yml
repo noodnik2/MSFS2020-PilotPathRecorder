@@ -38,7 +38,7 @@ jobs:
     - name: Add Build Manifest
       id: build-manifest
       run: |
-        $env:BUILD_TAG=(-join('${{ github.ref }}'.split('/')[2], '.', '{{ github.run_id }}'))
+        $env:BUILD_TAG=(-join('${{ github.ref }}'.split('/')[2], '.', '${{ github.run_id }}'))
         echo "$env:BUILD_TAG" > FS2020PlanePath/bin/Release/build_tag.txt
         echo "::set-output name=BUILD_TAG::$env:BUILD_TAG"
 
