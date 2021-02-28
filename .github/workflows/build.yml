@@ -4,8 +4,8 @@ on:
   push:
     branches:
     - 210227-cicr-reset-test
-    tags:
-    - '*'
+#    tags:
+#    - '*'
 
 jobs:
 
