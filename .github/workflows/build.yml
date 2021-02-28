@@ -35,8 +35,10 @@ jobs:
       run: nuget restore FS2020PlanePath.sln
 
     - name: Build the solution
-      run: msbuild FS2020PlanePath.sln /p:Configuration=Release /p:PackageAsSingleFile=true
-      
+      run: msbuild FS2020PlanePath.sln /p:Configuration=Release
+
+#      run: msbuild FS2020PlanePath.sln /p:Configuration=Release /p:PackageAsSingleFile=true
+
 #    - name: Execute unit tests
 #      run: dotnet test FS2020PlanePath.XUnitTests/FS2020PlanePath.XUnitTests.csproj --no-restore
       
@@ -50,6 +52,6 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Deliverable
-        path: MSFS2020-PilotPathRecorder\MSFS2020-PilotPathRecorder\FS2020PlanePath\bin\Release\app.publish\FS2020PlanePath.exe
+        path: MSFS2020-PilotPathRecorder\MSFS2020-PilotPathRecorder\FS2020PlanePath\bin\Release\
         retention-days: 30
 
