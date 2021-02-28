@@ -36,13 +36,11 @@ jobs:
       run: msbuild FS2020PlanePath.sln /p:Configuration=Release
 
     - name: Add Build Manifest
+      id: build-manifest
       run: |
-        git tag
-        git tag > FS2020PlanePath/bin/Release/tag_versions_all.txt
-        git tag | select-object -last 1 > FS2020PlanePath/bin/Release/tag_version.txt
-        echo '${{ github.ref }}'.split('/')[2] > FS2020PlanePath/bin/Release/github_tag.txt
-        echo ${{ github.ref }} > FS2020PlanePath/bin/Release/github_ref_context.txt
-#        echo ${{ env.GITHUB_REF }} > FS2020PlanePath/bin/Release/github_ref_env.txt
+        $env:BUILD_TAG='${{ github.ref }}'.split('/')[2]
+        echo "$env:BUILD_TAG" > FS2020PlanePath/bin/Release/build_tag.txt
+        echo "::set-output name=BUILD_TAG::$env:BUILD_TAG"
 
     - name: Save Assets
       uses: actions/upload-artifact@v2
@@ -51,49 +49,76 @@ jobs:
         path: FS2020PlanePath/bin/
         retention-days: 30
 
-  release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v2
-      - name: Get Current Tag
-#          echo "BUILD_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))" >> $GITHUB_ENV
-        run: |
-          echo "BUILD_TAG=tn2" >> $GITHUB_ENV
-          echo "BUILD_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
-          echo "RELEASE_TIME=$(date +%y%m%d%H%M)" >> $GITHUB_ENV
-          echo "BUILD_TAG=${{ env.BUILD_TAG }}, BUILD_BRANCH=${{ env.BUILD_BRANCH }}, RELEASE_TIME=${{ env.RELEASE_TIME }}"
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: MSFS2020-PilotPathRecorder-n2
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ env.BUILD_BRANCH }}-${{ env.RELEASE_TIME }}
-          release_name: Release ${{ env.BUILD_TAG }}-${{ env.BUILD_BRANCH }}-${{ env.RELEASE_TIME }}
-      - name: Add Release Manifest
-        run: |
-          echo "Release ${BUILD_TAG}-${BUILD_BRANCH}-${RELEASE_TIME}" > Release/build_release_manifest
-      - name: Build Release Deliverable
-        uses: thedoctor0/zip-release@master
-        with:
-          path: Release
-          filename: PilotPathRecorder-n2.zip
-      - name: Upload Release Deliverable
-        id: upload_release_asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: PilotPathRecorder-n2.zip
-          asset_name: PilotPathRecorder-n2-${{ env.BUILD_TAG }}-${{ env.BUILD_BRANCH }}-${{ env.RELEASE_TIME }}.zip
-          asset_content_type: application/zip
+    - name: Create GitHub Release
+      id: create-release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.build-manifest.outputs.BUILD_TAG }}.${{ github.run_id }}
+        release_name: Release ${{ steps.build-manifest.outputs.BUILD_TAG }}.${{ github.run_id }}
+#    - name: Add Release Manifest
+#      run: |
+#        echo "Release ${BUILD_TAG}-${BUILD_BRANCH}-${RELEASE_TIME}" > Release/build_release_manifest
+    - name: Build Release Deliverable
+      uses: thedoctor0/zip-release@master
+      with:
+        path: FS2020PlanePath/bin/Release
+        filename: PilotPathRecorder-n2.zip
+    - name: Upload Release Deliverable
+      id: upload_release_asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create-release.outputs.upload_url }}
+        asset_path: PilotPathRecorder-n2.zip
+        asset_name: PilotPathRecorder-n2-${{ steps.build-manifest.outputs.BUILD_TAG }}.${{ github.run_id }}.zip
+        asset_content_type: application/zip
+
+#  release:
+#    name: Create Release
+#    runs-on: ubuntu-latest
+#    needs: build
+#    steps:
+#      - uses: actions/checkout@v2
+#      - name: Get Current Tag
+##          echo "BUILD_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))" >> $GITHUB_ENV
+#        run: |
+#          echo "BUILD_TAG=tn2" >> $GITHUB_ENV
+#          echo "BUILD_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
+#          echo "RELEASE_TIME=$(date +%y%m%d%H%M)" >> $GITHUB_ENV
+#          echo "BUILD_TAG=${{ env.BUILD_TAG }}, BUILD_BRANCH=${{ env.BUILD_BRANCH }}, RELEASE_TIME=${{ env.RELEASE_TIME }}"
+#      - name: Download Build Artifacts
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: MSFS2020-PilotPathRecorder-n2
+#      - name: Create GitHub Release
+#        id: create_release
+#        uses: actions/create-release@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          tag_name: ${{ env.BUILD_BRANCH }}-${{ env.RELEASE_TIME }}
+#          release_name: Release ${{ env.BUILD_TAG }}-${{ env.BUILD_BRANCH }}-${{ env.RELEASE_TIME }}
+#      - name: Add Release Manifest
+#        run: |
+#          echo "Release ${BUILD_TAG}-${BUILD_BRANCH}-${RELEASE_TIME}" > Release/build_release_manifest
+#      - name: Build Release Deliverable
+#        uses: thedoctor0/zip-release@master
+#        with:
+#          path: Release
+#          filename: PilotPathRecorder-n2.zip
+#      - name: Upload Release Deliverable
+#        id: upload_release_asset
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: PilotPathRecorder-n2.zip
+#          asset_name: PilotPathRecorder-n2-${{ env.BUILD_TAG }}-${{ env.BUILD_BRANCH }}-${{ env.RELEASE_TIME }}.zip
+#          asset_content_type: application/zip
 
 #  release:
 #    name: Create Release
