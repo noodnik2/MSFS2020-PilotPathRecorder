@@ -18,7 +18,8 @@ file extension.
 
 1. Download the `PilotPathRecorder*.zip` deliverable build asset from a 
    [release](https://github.com/noodnik2/MSFS2020-PilotPathRecorder/releases).
-   If you haven't any reason to prefer a specific release, choose the latest. 
+   If you haven't any reason to prefer a specific release, please 
+   [choose the latest](https://github.com/noodnik2/MSFS2020-PilotPathRecorder/releases/latest). 
 1. Unzip the release into a new application folder, from where you will run it.
    Note that the application will need write access to this folder (e.g., in
    order to store its state) when it runs.
