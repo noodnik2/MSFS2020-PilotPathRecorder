@@ -26,4 +26,12 @@ file extension.
    named `PilotPathRecorder.exe`, which you'll find within the unzipped
    folder.  It can be helpful to create a link to this location (e.g.,
    on your desktop) for easier access.
-
+   
+> _NOTE: as of this writing, the releases are not "signed", meaning
+you will likely receive a message from Windows advising you to
+refrain from unzipping and/or running the application, as it doesn't
+come from a "trusted" source.  Rest assured, there is no malware
+included; you can override the warning and continue to install
+and run the application, taking comfort that the full source code
+and [automated build script](.github/workflows/build.yml) are
+provided for [each release](https://github.com/noodnik2/MSFS2020-PilotPathRecorder/releases)._
