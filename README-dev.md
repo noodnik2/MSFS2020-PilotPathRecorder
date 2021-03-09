@@ -12,6 +12,7 @@ and/or less frustrating!
 - [Creating a Release](#creating-a-release)
 - [Signing The Application Manifest](#signing-the-application-manifest)
 - [LiveCam Webserver Tricks](#livecam-webserver-tricks)
+- [TODO list](README-todos.md)
 
 ## Creating A Release
 
