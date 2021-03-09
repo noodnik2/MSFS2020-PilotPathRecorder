@@ -1063,10 +1063,7 @@ namespace FS2020PlanePath
                         "Live Camera Update", 
                         $"Live Camera '{kmlEditorForm.Alias}' Definition was Saved"
                     );
-                    if (alias != kmlEditorForm.Alias)
-                    {
-                        LoadLiveCams();
-                    }
+                    LoadLiveCams();
                 }
 
             }

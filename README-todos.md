@@ -2,16 +2,8 @@
 
 ## Fix Known Bugs
 
-1. **URL of Newly Created Lens Does Not Appear**
-    - _**Background:**_
-        - It's been observed that the URL of a newly created Lens does
-          not appear in the "LiveCamera" URL (dropdown) list in the
-          main dialog.
-        - The LiveCam is created; however, and does appear in the list
-          of LiveCams after the application is restarted.
-    - _**Suggested Fix:**_
-        - Find the problem and fix it, such that the URLs for newly
-          created LiveCams appear in the list and can be selected.
+- _None reported currently._
+- _All software has bugs; please file & track issues._ 
 
 ## Consider and/or Implement Suggested Improvements
 
