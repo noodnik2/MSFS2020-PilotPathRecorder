@@ -19,10 +19,10 @@ namespace FS2020PlanePath.XUnitTests
         }
 
         [Fact]
-        public void TestSimpleCSharpScript()
+        public async void TestSimpleCSharpScript()
         {
-            interpret("return \"hello, there - this is interpreted\";");
-            compile("return \"hello, there - this is compiled\";");
+            await interpret("return \"hello, there - this is interpreted\";");
+            await compile("return \"hello, there - this is compiled\";");
             logger.WriteLine("done");
         }
 
